@@ -21,6 +21,8 @@
 #include <syslog.h>
 
 #include <linux/can.h>
+#include "can-so.h"
+#include "can-os.h"
 
 int raw_socket;
 struct ifreq ifr;
@@ -32,11 +34,12 @@ char ctrlmsg[CMSG_SPACE(sizeof(struct timeval)) + CMSG_SPACE(sizeof(__u32))];
 struct timeval tv;
 struct cmsghdr *cmsg;
 
+struct CANALL canall; // Our format stuff
+
 void state_raw() {
 	char buf[MAXLEN];
 	int i, ret, items;
 	fd_set readfds;
-
 	if(previous_state != STATE_RAW) {
 
 		if((raw_socket = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
@@ -80,7 +83,6 @@ void state_raw() {
 	FD_ZERO(&readfds);
 	FD_SET(raw_socket, &readfds);
 	FD_SET(client_socket, &readfds);
-
 	/*
 	 * Check if there are more elements in the element buffer before calling select() and
 	 * blocking for new packets.
@@ -123,15 +125,21 @@ void state_raw() {
 			} else if(frame.can_id & CAN_RTR_FLAG) {
 				/* TODO implement */
 			} else {
-				if(frame.can_id & CAN_EFF_FLAG) {
-					ret = sprintf(buf, "< frame %08X %ld.%06ld ", frame.can_id & CAN_EFF_MASK, tv.tv_sec, tv.tv_usec);
-				} else {
-					ret = sprintf(buf, "< frame %03X %ld.%06ld ", frame.can_id & CAN_SFF_MASK, tv.tv_sec, tv.tv_usec);
+				
+//				if(frame.can_id & CAN_EFF_FLAG) {
+//					ret = sprintf(buf, "%08X ", frame.can_id << 3);
+//				} else {
+//					ret = sprintf(buf, "%08X ", frame.can_id << 21);
+//				}
+//				ret += sprintf(buf+ret," %d ",frame.can_dlc);
+//				for(i=0;i<frame.can_dlc;i++) {
+//					ret += sprintf(buf+ret, "%02X", frame.data[i]);
+//				}
+				/* Convert from Socket/Seeed to Our/Old ascii format */
+				if (can_so_cnvt(&canall,&frame) != 0){
+					ret += sprintf(buf,"\tERROR %d: CAN-SO ", ret);
 				}
-				for(i=0;i<frame.can_dlc;i++) {
-					ret += sprintf(buf+ret, "%02X", frame.data[i]);
-				}
-				sprintf(buf+ret, " >");
+				ret += sprintf(buf,"%s",canall.caa);
 				send(client_socket, buf, strlen(buf), 0);
 			}
 		}

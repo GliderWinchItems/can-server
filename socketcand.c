@@ -88,7 +88,8 @@ int port;
 int verbose_flag=0;
 int daemon_flag=0;
 int disable_beacon=0;
-int state = STATE_NO_BUS;
+		int state = STATE_NO_BUS;
+//		int state = STATE_BCM; //
 int previous_state = -1;
 char bus_name[MAX_BUSNAME];
 char cmd_buffer[MAXLEN];
@@ -480,22 +481,22 @@ int main(int argc, char **argv)
 	while(1) {
 		switch(state) {
 		case STATE_NO_BUS:
-			if(previous_state != STATE_NO_BUS) {
-				strcpy(buf, "< hi >");
-				send(client_socket, buf, strlen(buf), 0);
-				previous_state = STATE_NO_BUS;
-			}
-			/* client has to start with a command */
-			i = receive_command(client_socket, (char *) &buf);
-			if(i != 0) {
-				PRINT_ERROR("Connection terminated while waiting for command.\n");
-				state = STATE_SHUTDOWN;
-				break;
-			}
+//			if(previous_state != STATE_NO_BUS) {
+//				strcpy(buf, "< hi >");
+//				send(client_socket, buf, strlen(buf), 0);
+//				previous_state = STATE_NO_BUS;
+//			}
+//			/* client has to start with a command */
+//			i = receive_command(client_socket, (char *) &buf);
+//			if(i != 0) {
+//				PRINT_ERROR("Connection terminated while waiting for command.\n");
+//				state = STATE_SHUTDOWN;
+//				break;
+//			}
 
-			if(!strncmp("< open ", buf, 7)) {
-				sscanf(buf, "< open %s>", bus_name);
-
+//			if(!strncmp("< open ", buf, 7)) {
+//				sscanf(buf, "< open %s>", bus_name);
+strcpy(bus_name,"can1");
 				/* check if access to this bus is allowed */
 				found = 0;
 				for(i=0;i<interface_count;i++) {
@@ -503,27 +504,28 @@ int main(int argc, char **argv)
 						found = 1;
 				}
 
-				if(found) {
-					strcpy(buf, "< ok >");
-					send(client_socket, buf, strlen(buf), 0);
-					state = STATE_BCM;
-					break;
-				} else {
-					PRINT_INFO("client tried to access unauthorized bus.\n");
-					strcpy(buf, "< error could not open bus >");
-					send(client_socket, buf, strlen(buf), 0);
-					state = STATE_SHUTDOWN;
-				}
-			} else {
-				PRINT_ERROR("unknown command '%s'.\n", buf);
-				strcpy(buf, "< error unknown command >");
-				send(client_socket, buf, strlen(buf), 0);
-			}
-			break;
+//				if(found) {
+//					strcpy(buf, "< ok >");
+//					send(client_socket, buf, strlen(buf), 0);
+//					state = STATE_BCM;
+//					break;
+//				} else {
+//					PRINT_INFO("client tried to access unauthorized bus.\n");
+//					strcpy(buf, "< error could not open bus >");
+//					send(client_socket, buf, strlen(buf), 0);
+//					state = STATE_SHUTDOWN;
+//				}
+//			} else {
+//				PRINT_ERROR("unknown command '%s'.\n", buf);
+//				strcpy(buf, "< error unknown command >");
+//				send(client_socket, buf, strlen(buf), 0);
+//			}
+//			break;
 
-		case STATE_BCM:
-			state_bcm();
-			break;
+//		case STATE_BCM:
+//			state_bcm();
+//			break;
+state = STATE_RAW;
 		case STATE_RAW:
 			state_raw();
 			break;
