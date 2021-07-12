@@ -1,30 +1,31 @@
 #
-# @configure_input@
+# Makefile.  Generated from Makefile.in by configure.
 #
 
 sourcefiles = $(srcdir)/socketcand.c $(srcdir)/statistics.c $(srcdir)/beacon.c \
 	$(srcdir)/state_bcm.c $(srcdir)/state_raw.c \
-	$(srcdir)/state_isotp.c $(srcdir)/state_control.c
+	$(srcdir)/state_isotp.c $(srcdir)/state_control.c \
+	$(srcdir)/can-os.c $(srcdir)/can-so.c
 
 executable = socketcand
 sourcefiles_cl = $(srcdir)/socketcandcl.c
 executable_cl = socketcandcl
-srcdir = @srcdir@
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-datarootdir = @datarootdir@
-bindir = @bindir@
-mandir = @mandir@
-sysconfdir = @sysconfdir@
-CFLAGS = @CFLAGS@
-LIBS = @LIBS@
-init_script = @init_script@
-rc_script = @rc_script@
-CC = @CC@
-LDFLAGS = @LDFLAGS@
-DEFS = @DEFS@
-CPPFLAGS = @CPPFLAGS@
-sysroot = @sysroot@
+srcdir = .
+prefix = /usr/local
+exec_prefix = ${prefix}
+datarootdir = ${prefix}/share
+bindir = ${exec_prefix}/bin
+mandir = ${datarootdir}/man
+sysconfdir = ${prefix}/etc
+CFLAGS =  -Wall -Wno-parentheses -DPF_CAN=29 -DAF_CAN=PF_CAN
+LIBS = -lpthread 
+init_script = yes
+rc_script = no
+CC = gcc
+LDFLAGS = 
+DEFS = -DHAVE_CONFIG_H
+CPPFLAGS = 
+sysroot = 
 
 all: socketcand socketcandcl
 
