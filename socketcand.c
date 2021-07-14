@@ -263,6 +263,8 @@ int main(int argc, char **argv)
 		case 'i':
 			busses_string = realloc(busses_string, strlen(optarg)+1);
 			strcpy(busses_string, optarg);
+	strncpy(bus_name,busses_string,5);
+	printf("i OPTION: bus_name:%s\n",bus_name);
 			break;
 
 		case 'p':
@@ -496,7 +498,15 @@ int main(int argc, char **argv)
 
 //			if(!strncmp("< open ", buf, 7)) {
 //				sscanf(buf, "< open %s>", bus_name);
-strcpy(bus_name,"can1");
+if (!( strcmp(bus_name,"can0" ) || 
+	   strcmp(bus_name,"can1" ) ||
+	   strcmp(bus_name,"vcan0") ||
+	   strcmp(bus_name,"vcan1") )){
+		   PRINT_ERROR("Command line option i not can0, can1, vcan0, vcan1\n")
+		   state = STATE_SHUTDOWN;
+		   break;
+	   }
+	   printf("bus_name %s\n",bus_name);	
 				/* check if access to this bus is allowed */
 				found = 0;
 				for(i=0;i<interface_count;i++) {

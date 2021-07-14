@@ -34,11 +34,13 @@ char ctrlmsg[CMSG_SPACE(sizeof(struct timeval)) + CMSG_SPACE(sizeof(__u32))];
 struct timeval tv;
 struct cmsghdr *cmsg;
 
-struct CANALL canall; // Our format stuff
+struct CANALL canall_r; // Our format: 'r' = read from CAN bus
+struct CANALL canall_w; // Our format: 'w' = write to CAN bus
 
 void state_raw() {
 	char buf[MAXLEN];
 	int i, ret, items;
+	int ret1;
 	fd_set readfds;
 	if(previous_state != STATE_RAW) {
 
@@ -135,80 +137,57 @@ void state_raw() {
 //				for(i=0;i<frame.can_dlc;i++) {
 //					ret += sprintf(buf+ret, "%02X", frame.data[i]);
 //				}
-				/* Convert from Socket/Seeed to Our/Old ascii format */
-				if (can_so_cnvt(&canall,&frame) != 0){
+				/* "so" = Convert from Socket/Seeed to Our/Old ascii format */
+				if (can_so_cnvt(&canall_r,&frame) != 0){
 					ret += sprintf(buf,"\tERROR %d: CAN-SO ", ret);
 				}
-				ret += sprintf(buf,"%s",canall.caa);
+				ret += sprintf(buf,"%s",canall_r.caa);
 				send(client_socket, buf, strlen(buf), 0);
 			}
 		}
 	}
-
+#define XBUFSZ 256
+char xbuf[XBUFSZ];
 	if(FD_ISSET(client_socket, &readfds)) {
-		ret = receive_command(client_socket, (char *) &buf);
+//		ret = receive_command(client_socket, (char *) &buf);
+		ret = read(client_socket, xbuf, XBUFSZ);
+		xbuf[ret+1]= 0;
+		if (strlen(xbuf) > 1){
+			printf("xbuf %s",xbuf);
 
-		if(ret == 0) {
-
-			if (state_changed(buf, state)) {
-				close(raw_socket);
-				strcpy(buf, "< ok >");
-				send(client_socket, buf, strlen(buf), 0);
-				return;
+		/* Convert from Our/Old to Seeed/Socket format */
+		ret1 = can_os_cnvt(&frame,&canall_w,xbuf);
+		if (ret1 < 0){
+			switch(ret1){
+			case  -1: PRINT_ERROR("Error: can_os: Input string too long (>31)\n");
+				break;
+			case  -2: PRINT_ERROR("Error: can_os: Input string too short (<15)\n");
+				break;
+			case  -3: PRINT_ERROR("Error: can_os: Illegal hex char in input string");
+				break;
+			case  -4: PRINT_ERROR("Error: can_os: Illegal CAN id: 29b low ord bits present with 11b IDE flag off\n");
+				break;
+			case  -5: PRINT_ERROR("Error: can_os: Illegal DLC\n");
+				break;
+			case  -6: PRINT_ERROR("Error: can_os: Checksum error\n");
+				break;
+			default: printf("ERROR: can_os: error not classified: %d\n");
+				break;
 			}
-
-			if(!strcmp("< echo >", buf)) {
-				send(client_socket, buf, strlen(buf), 0);
-				return;
-			}
-
-			/* Send a single frame */
-			if(!strncmp("< send ", buf, 7)) {
-				items = sscanf(buf, "< %*s %x %hhu "
-					       "%hhx %hhx %hhx %hhx %hhx %hhx "
-					       "%hhx %hhx >",
-					       &frame.can_id,
-					       &frame.can_dlc,
-					       &frame.data[0],
-					       &frame.data[1],
-					       &frame.data[2],
-					       &frame.data[3],
-					       &frame.data[4],
-					       &frame.data[5],
-					       &frame.data[6],
-					       &frame.data[7]);
-
-				if ( (items < 2) ||
-				     (frame.can_dlc > 8) ||
-				     (items != 2 + frame.can_dlc)) {
-					PRINT_ERROR("Syntax error in send command\n")
-						return;
-				}
-
-				/* < send XXXXXXXX ... > check for extended identifier */
-				if(element_length(buf, 2) == 8)
-					frame.can_id |= CAN_EFF_FLAG;
-
-				ret = send(raw_socket, &frame, sizeof(struct can_frame), 0);
-				if(ret==-1) {
-					state = STATE_SHUTDOWN;
-					return;
-				}
-
-			} else {
-				PRINT_ERROR("unknown command '%s'\n", buf);
-				strcpy(buf, "< error unknown command >");
-				send(client_socket, buf, strlen(buf), 0);
-			}
-		} else {
-			state = STATE_SHUTDOWN;
-			return;
 		}
-	} else {
-		ret = read(client_socket, &buf, 0);
+		}
+		ret = send(raw_socket, &frame, sizeof(struct can_frame), 0);
 		if(ret==-1) {
+printf("STATE_RAW: send(raw_socket...\n");
 			state = STATE_SHUTDOWN;
 			return;
 		}
+	} 
+
+	ret = read(client_socket, &xbuf, 0);
+	if(ret==-1) {
+printf("STATE_RAW: read(client_sock...SHUTDOWN\n");
+		state = STATE_SHUTDOWN;
+		return;
 	}
 }
