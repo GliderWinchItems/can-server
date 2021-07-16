@@ -5,7 +5,7 @@
 sourcefiles = $(srcdir)/socketcand.c $(srcdir)/statistics.c $(srcdir)/beacon.c \
 	$(srcdir)/state_bcm.c $(srcdir)/state_raw.c \
 	$(srcdir)/state_isotp.c $(srcdir)/state_control.c \
-	$(srcdir)/can-os.c $(srcdir)/can-so.c
+	$(srcdir)/can-os.c $(srcdir)/can-so.c extract-line.c 
 
 executable = socketcand
 sourcefiles_cl = $(srcdir)/socketcandcl.c

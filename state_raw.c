@@ -20,9 +20,11 @@
 #include <arpa/inet.h>
 #include <syslog.h>
 
+#include <errno.h>
 #include <linux/can.h>
 #include "can-so.h"
 #include "can-os.h"
+#include "extract-line.h"
 
 int raw_socket;
 struct ifreq ifr;
@@ -39,7 +41,7 @@ struct CANALL canall_w; // Our format: 'w' = write to CAN bus
 
 void state_raw() {
 	char buf[MAXLEN];
-	int i, ret, items;
+	int ret;
 	int ret1;
 	fd_set readfds;
 	if(previous_state != STATE_RAW) {
@@ -146,48 +148,60 @@ void state_raw() {
 			}
 		}
 	}
-#define XBUFSZ 256
-char xbuf[XBUFSZ];
+#define XBUFSZ 1024
+static char xbuf[XBUFSZ];
+static char *pret;
+
+static int32_t sctr = 0;
+
 	if(FD_ISSET(client_socket, &readfds)) {
 //		ret = receive_command(client_socket, (char *) &buf);
 		ret = read(client_socket, xbuf, XBUFSZ);
-		xbuf[ret+1]= 0;
-		if (strlen(xbuf) > 1){
-			printf("xbuf %s",xbuf);
 
-		/* Convert from Our/Old to Seeed/Socket format */
-		ret1 = can_os_cnvt(&frame,&canall_w,xbuf);
-		if (ret1 < 0){
-			switch(ret1){
-			case  -1: PRINT_ERROR("Error: can_os: Input string too long (>31)\n");
-				break;
-			case  -2: PRINT_ERROR("Error: can_os: Input string too short (<15)\n");
-				break;
-			case  -3: PRINT_ERROR("Error: can_os: Illegal hex char in input string");
-				break;
-			case  -4: PRINT_ERROR("Error: can_os: Illegal CAN id: 29b low ord bits present with 11b IDE flag off\n");
-				break;
-			case  -5: PRINT_ERROR("Error: can_os: Illegal DLC\n");
-				break;
-			case  -6: PRINT_ERROR("Error: can_os: Checksum error\n");
-				break;
-			default: printf("ERROR: can_os: error not classified: %d\n");
-				break;
+		pret = extract_line_add(xbuf,ret);
+printf("extract_add: %d\n",ret);
+
+		if (pret != NULL)
+		{ // Convert from Our/Old to Seeed/Socket format 
+printf("PBUF:%s\n",pret);
+			ret1 = can_os_cnvt(&frame,&canall_w,pret);
+			extract_line_printerr(ret1); // Nice format error output
+
+			if (ret1 == 0)
+			{
+				ret = send(raw_socket, &frame, sizeof(struct can_frame), 0);
+				if (ret < 0) printf("Send1 err: %s\n",strerror(errno));
+printf("Send sctr: %d\n",sctr++);
 			}
 		}
-		}
-		ret = send(raw_socket, &frame, sizeof(struct can_frame), 0);
-		if(ret==-1) {
-printf("STATE_RAW: send(raw_socket...\n");
-			state = STATE_SHUTDOWN;
-			return;
-		}
+		do
+		{
+			pret = extract_line_add(xbuf,0);
+			if (pret != NULL)
+			{
+				ret1 = can_os_cnvt(&frame,&canall_w,pret);
+				if (ret1 == 0)
+				{
+					extract_line_printerr(ret1); // Nice format error output
+					send(raw_socket, &frame, sizeof(struct can_frame), 0);
+					if (ret < 0) printf("Send2 err: %s\n",strerror(errno));
+printf("Send sctr: %d\n",sctr++);
+				}
+			}
+		} while (pret != NULL);
+		
+		
+//		if(ret==-1) {
+//printf("STATE_RAW: send(raw_socket...\n");
+//			state = STATE_SHUTDOWN;
+//			return;			
+//		}
 	} 
 
-	ret = read(client_socket, &xbuf, 0);
-	if(ret==-1) {
-printf("STATE_RAW: read(client_sock...SHUTDOWN\n");
-		state = STATE_SHUTDOWN;
-		return;
-	}
+//	ret = read(client_socket, &xbuf, 0);
+//	if(ret==-1) {
+//printf("STATE_RAW: read(client_sock...SHUTDOWN\n");
+//		state = STATE_SHUTDOWN;
+//		return;
+//	}
 }

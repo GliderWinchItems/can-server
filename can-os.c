@@ -57,20 +57,21 @@ int can_os_cnvt(struct can_frame *pframe,struct CANALL *pall, char* p)
 	uint32_t x = CHECKSUM_INITIAL; // (0xa5a5. See common_can.h)
 	uint8_t *pend;
 	uint8_t *pb; // Binary array, working ptr 
-	uint8_t  w;
-	uint8_t  y;
+	uint8_t  w;  // hi-ord nibble
+	uint8_t  y;  // lo-ord nibble
 
 	int len = strlen(p);
 	if (len > 31) return -1; // Too long
 	if (len < 15) return -2; // Too short
 
 	/* Convert incoming ascii to binary */
-	pb = &pall->cba[0]; // Binary array, working ptr 
-	pend = pb + len -1; // Ignore '\n' (odd) at end
+	pb = &pall->cba[0];    // Binary array, working ptr 
+	pend = pb + (len-1)/2; // Ignore '\n' (odd) at end
 	while (pb < pend){
-		if (((x=hxbn[(*(uint8_t*)p++)]) != E) && (y=hxbn[*(uint8_t*)(p++)]) != E){
-			*pb = (x<<4)|y;	// Combine nibbles
-			x +=  *pb++;	// Build checksum, advance binary ptr
+		/* Look up to convert ascii char to binary nibble, and check for error. */
+		if (((w=hxbn[(*(uint8_t*)p++)]) != E) && (y=hxbn[*(uint8_t*)(p++)]) != E){
+			*pb = (w << 4) | y;	// Combine nibbles
+			x +=  *pb++; // Build checksum, advance binary array ptr
 		}
 		else{
 			return -3; // E = Illegal hex char (not E = excellence)
@@ -98,15 +99,22 @@ int can_os_cnvt(struct can_frame *pframe,struct CANALL *pall, char* p)
 	if (pall->can.dlc > 8){
 		return -5; // DLC too big
 	}
+
+	/* Copy binary array payload into Our traditional struct payload union. */
+	for (int m = 0; m < pall->can.dlc; m++) pall->can.cd.uc[m] = *(pb+6+m);
+
 	// Add DLC to CAN frame (since it already in the registers(?))
 	pframe->can_dlc = pall->can.dlc;
 
 	/* Checksum check */
+	x -= *(pb + 6 + pall->can.dlc);
+
 	// Complete checksum computation
     x += (x >> 16); // Add carries into high half word
     x += (x >> 16); // Add carry if previous add generated a carry
     x += (x >> 8);  // Add high byte of low half word
     x += (x >> 8);  // Add carry if previous add generated a carry
+
 	if (*(pb + 6 + pall->can.dlc) != (uint8_t)x){
 		return -6; // Checksum error
 	}

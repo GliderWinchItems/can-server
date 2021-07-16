@@ -7,17 +7,20 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
+
+#include "socketcand.h"
 
 #define BUFBIGSZ 8192 
-stattic char bufbig[BUFBIGSZ]; // Stream buffer
+static char bufbig[BUFBIGSZ]; // Stream buffer
 
 #define MAXOUTSZ 64
 #define BUFOUTSZ MAXOUTSZ
-stattic char bufout[BUFOUTSZ]; // Line under construction
+static char bufout[BUFOUTSZ]; // Line under construction
 
-stattic char *pb1 = &bufbig[0]; // Pointer next to be removed
-stattic char *pb2 = &bufbig[0]; // Pointer next to be added
-stattic char *po  = &bufout[0]; // Pointer next to be added
+static char *pb1 = &bufbig[0]; // Pointer next to be removed
+static char *pb2 = &bufbig[0]; // Pointer next to be added
+static char *po  = &bufout[0]; // Pointer next to be added
 
 uint32_t maxctr = 0;
 uint32_t ovrrunctr = 0;
@@ -51,9 +54,7 @@ char *extract_line_add(char* pin, int n)
             pb2 += n;
         }
         else
-        {
-            
-             // Here, adding input will go off the end of the buffer
+        {  // Here, adding input will go off the end of the buffer
             while ((pb2 != &bufbig[BUFBIGSZ]) && (n > 0))
             {
                 *pb2++ = *pin++;
@@ -71,7 +72,7 @@ char *extract_line_add(char* pin, int n)
         }
     }
     // Here see if we can complete a line.
-    while ((po < &BUFOUT[BUFOUTSZ-1]) && (pb1 != pb2))
+    while ((po < &bufout[BUFOUTSZ-1]) && (pb1 != pb2))
     {
         *po = *pb1++; // Copy buf big to output line
 
@@ -82,16 +83,41 @@ char *extract_line_add(char* pin, int n)
         if (*po++ == '\n')
         { // Here, a line is complete
             *po = '\0';
-            po = &bufout[0];
+            po = &bufout[0]; // Reset for next line
             return po;
         }
 
         // Don't overrun our output buffer.
-        if (po == &bufout[BUFBIGSZ])
+        if (po == &bufout[BUFOUTSZ])
         { // Line is getting too long to be a valid CAN msg
             po = &bufout[0];
             maxctr += 1;
         }
     }
     return NULL;
+}
+/* **************************************************************************************
+ * void extract_line_printerr(int ret);
+ * @brief	: printf for return value of above code
+ * ************************************************************************************** */
+void extract_line_printerr(int ret)
+{
+    if (ret >= 0) return;
+				switch(ret){
+			case  -1: PRINT_ERROR("Error: can_os: Input string too long (>31)\n");
+				break;
+			case  -2: PRINT_ERROR("Error: can_os: Input string too short (<15)\n");
+				break;
+			case  -3: PRINT_ERROR("Error: can_os: Illegal hex char in input string");
+				break;
+			case  -4: PRINT_ERROR("Error: can_os: Illegal CAN id: 29b low ord bits present with 11b IDE flag off\n");
+				break;
+			case  -5: PRINT_ERROR("Error: can_os: Illegal DLC\n");
+				break;
+			case  -6: PRINT_ERROR("Error: can_os: Checksum error\n");
+				break;
+			default: printf("ERROR: can_os: error not classified: %d\n",ret);
+				break;
+				}
+    return;
 }
