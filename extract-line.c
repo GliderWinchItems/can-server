@@ -11,7 +11,7 @@
 
 #include "socketcand.h"
 
-#define BUFBIGSZ 8192 
+#define BUFBIGSZ 256
 static char bufbig[BUFBIGSZ]; // Stream buffer
 
 #define MAXOUTSZ 64
@@ -37,37 +37,25 @@ uint32_t ovrrunctr = 0;
  * ************************************************************************************** */
 char *extract_line_add(char* pin, int n)
 {
-    int32_t nn;
+    char *ptmp;
     /* If no chars, then see if another line can be built from current buf big. */
     if (n > 0)
     { // Here, new chars to be added to big buffer
-        nn = (&bufbig[BUFBIGSZ] - pb2);
-        if (nn = 0) 
-        {
-            nn = BUFBIGSZ;
-            pb2 = &bufbig[0];
-        }
+        while ((pb2 != &bufbig[BUFBIGSZ]) && (n > 0))
+       {
+            n -= 1;
+            *pb2 = *pin++; // Copy char
+            ptmp = pb2++;  // Save for overrun reset
 
-        if (nn >= 0)
-        { // Here, the whole input can (most likely) be efficienctly copied
-            memcpy(pb2,pin,n);
-            pb2 += n;
-        }
-        else
-        {  // Here, adding input will go off the end of the buffer
-            while ((pb2 != &bufbig[BUFBIGSZ]) && (n > 0))
-            {
-                *pb2++ = *pin++;
-                n -= 1;
-                if (pb2 == &bufbig[BUFBIGSZ])
-                { // Here, wraparound required
-                    pb2 = &bufbig[0];
-                    if (pb2 == pb1)
-                    { // Here, we are about to overrun big buffer
-                        ovrrunctr += 1;
-                        break; // Screwed. Throw away input
-                    }
-                }
+            // pb2 wraparound check
+            if (pb2 == &bufbig[BUFBIGSZ]) pb2 = &bufbig[0];
+
+            // Overrun prevention
+            if (pb2 == pb1)
+            { // Here, next char will overrun big buffer
+                pb2 = ptmp; // Reset pb2 to one less than pb1
+                ovrrunctr += 1;
+                break; // Screwed. Throw away input
             }
         }
     }
