@@ -3,6 +3,8 @@
 #include <pthread.h>
 #include <syslog.h>
 
+#define XBUFSZ 128 // Number chars to read from RAW socket read
+
 /* max. length for ISO 15765-2 PDUs */
 #define ISOTPLEN 4095
 

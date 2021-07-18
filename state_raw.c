@@ -91,56 +91,53 @@ void state_raw() {
 	 * Check if there are more elements in the element buffer before calling select() and
 	 * blocking for new packets.
 	 */
-	if(more_elements) {
-		FD_CLR(raw_socket, &readfds);
-	} else {
-		ret = select((raw_socket > client_socket)?raw_socket+1:client_socket+1, &readfds, NULL, NULL, NULL);
+	ret = select((raw_socket > client_socket)?raw_socket+1:client_socket+1, &readfds, NULL, NULL, NULL);
 
-		if(ret < 0) {
-			PRINT_ERROR("Error in select()\n")
-				state = STATE_SHUTDOWN;
-			return;
-		}
+	if(ret < 0) 
+	{
+		PRINT_ERROR("Error in select()\n")
+		state = STATE_SHUTDOWN;
+		return;
 	}
 
-	if(FD_ISSET(raw_socket, &readfds)) {
+	if(FD_ISSET(raw_socket, &readfds)) 
+	{
 		iov.iov_len = sizeof(frame);
 		msg.msg_namelen = sizeof(addr);
 		msg.msg_flags = 0;
 		msg.msg_controllen = sizeof(ctrlmsg);
 
 		ret = recvmsg(raw_socket, &msg, 0);
-		if(ret < sizeof(struct can_frame)) {
+		if(ret < sizeof(struct can_frame)) 
+		{
 			PRINT_ERROR("Error reading frame from RAW socket\n")
 				} else {
 			/* read timestamp data */
 			for (cmsg = CMSG_FIRSTHDR(&msg);
 			     cmsg && (cmsg->cmsg_level == SOL_SOCKET);
-			     cmsg = CMSG_NXTHDR(&msg,cmsg)) {
-				if (cmsg->cmsg_type == SO_TIMESTAMP) {
+			     cmsg = CMSG_NXTHDR(&msg,cmsg)) 
+			{
+				if (cmsg->cmsg_type == SO_TIMESTAMP) 
+				{
 					tv = *(struct timeval *)CMSG_DATA(cmsg);
 				}
 			}
 
-			if(frame.can_id & CAN_ERR_FLAG) {
+			if(frame.can_id & CAN_ERR_FLAG) 
+			{
 				canid_t class = frame.can_id  & CAN_EFF_MASK;
 				ret = sprintf(buf, "< error %03X %ld.%06ld >", class, tv.tv_sec, tv.tv_usec);
 				send(client_socket, buf, strlen(buf), 0);
-			} else if(frame.can_id & CAN_RTR_FLAG) {
+			} 
+			else if(frame.can_id & CAN_RTR_FLAG) 
+			{
 				/* TODO implement */
-			} else {
-				
-//				if(frame.can_id & CAN_EFF_FLAG) {
-//					ret = sprintf(buf, "%08X ", frame.can_id << 3);
-//				} else {
-//					ret = sprintf(buf, "%08X ", frame.can_id << 21);
-//				}
-//				ret += sprintf(buf+ret," %d ",frame.can_dlc);
-//				for(i=0;i<frame.can_dlc;i++) {
-//					ret += sprintf(buf+ret, "%02X", frame.data[i]);
-//				}
+			} 
+			else 
+			{	
 				/* "so" = Convert from Socket/Seeed to Our/Old ascii format */
-				if (can_so_cnvt(&canall_r,&frame) != 0){
+				if (can_so_cnvt(&canall_r,&frame) != 0)
+				{
 					ret += sprintf(buf,"\tERROR %d: CAN-SO ", ret);
 				}
 				ret += sprintf(buf,"%s",canall_r.caa);
@@ -148,60 +145,40 @@ void state_raw() {
 			}
 		}
 	}
-#define XBUFSZ 1024
-static char xbuf[XBUFSZ];
-static char *pret;
 
-static int32_t sctr = 0;
+static char xbuf[XBUFSZ]; // See socketcand.h for XBUFSZ
+static char *pret; // extract_line_get() return points to line
 
-	if(FD_ISSET(client_socket, &readfds)) {
-//		ret = receive_command(client_socket, (char *) &buf);
-		ret = read(client_socket, xbuf, XBUFSZ);
+static int32_t sctr = 0; // Debug counter
 
-		pret = extract_line_add(xbuf,ret);
-printf("extract_add: %d\n",ret);
-
-		if (pret != NULL)
-		{ // Convert from Our/Old to Seeed/Socket format 
-printf("PBUF:%s\n",pret);
-			ret1 = can_os_cnvt(&frame,&canall_w,pret);
-			extract_line_printerr(ret1); // Nice format error output
-
-			if (ret1 == 0)
-			{
-				ret = send(raw_socket, &frame, sizeof(struct can_frame), 0);
-				if (ret < 0) printf("Send1 err: %s\n",strerror(errno));
-printf("Send sctr: %d\n",sctr++);
-			}
-		}
-		do
+	if(FD_ISSET(client_socket, &readfds)) 
+	{
+		do /* Read socket until no chars. */
 		{
-			pret = extract_line_add(xbuf,0);
-			if (pret != NULL)
-			{
-				ret1 = can_os_cnvt(&frame,&canall_w,pret);
-				if (ret1 == 0)
-				{
-					extract_line_printerr(ret1); // Nice format error output
-					send(raw_socket, &frame, sizeof(struct can_frame), 0);
-					if (ret < 0) printf("Send2 err: %s\n",strerror(errno));
-printf("Send sctr: %d\n",sctr++);
-				}
+			ret = read(client_socket, xbuf, XBUFSZ);
+			if (ret > 0)
+			{ // Here, some additional incoming chars from the stream 
+				extract_line_add(xbuf,ret); // Add to a buffer
+
+				do /* Extract:Convert:send lines until no lines in buffer. */
+				{				
+					pret = extract_line_get(); // Attempt to get line from buffer
+					if (pret != NULL)
+					{ // Here, pret points to a complete line
+						ret1 = can_os_cnvt(&frame,&canall_w,pret);
+						if (ret1 == 0)
+						{ // Here, conversion to output frame good and ready to send
+							send(raw_socket, &frame, sizeof(struct can_frame), 0);
+sctr += 1;							
+						}
+						else
+						{ // Here, some sort of error with the ascii line
+printf("sctr: %d ",sctr)						;
+							can_os_printerr(ret1); // Nice format error output
+						}
+					}
+				} while (pret != NULL);
 			}
 		} while (pret != NULL);
-		
-		
-//		if(ret==-1) {
-//printf("STATE_RAW: send(raw_socket...\n");
-//			state = STATE_SHUTDOWN;
-//			return;			
-//		}
-	} 
-
-//	ret = read(client_socket, &xbuf, 0);
-//	if(ret==-1) {
-//printf("STATE_RAW: read(client_sock...SHUTDOWN\n");
-//		state = STATE_SHUTDOWN;
-//		return;
-//	}
+	}
 }

@@ -24,4 +24,7 @@
  			: -5 = Illegal DLC: (low four bits greater than 8) [Time Stamping ignored]
  *			: -6 = Checksum error
  * ************************************************************************************** */
+void can_os_printerr(int ret);
+/* @brief	: printf for return value of above code
+ * ************************************************************************************** */
 #endif

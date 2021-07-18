@@ -5,9 +5,17 @@
 * Description        : Convert our Original format (ascii-hex) to Can Socket frame
 *******************************************************************************/
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+
+#include "linux/can.h"
+#include "socketcand.h"
+
 #include "common_can.h"
 #include "can-os.h"
-#include <string.h>
+#include "can-so.h"
 
 /* Lookup table to convert one hex char to binary (4 bits), no checking for illegal incoming hex */
 #define E 255	// Error flag: non-hex char
@@ -134,4 +142,31 @@ int can_os_cnvt(struct can_frame *pframe,struct CANALL *pall, char* p)
 	*(uint64_t*)&pframe->data[0] = pall->can.cd.ull;
 
 	return 0; // All Hail! Victory is ours!
+}
+
+/* **************************************************************************************
+ * void can_os_printerr(int ret);
+ * @brief	: printf for return value of above code
+ * ************************************************************************************** */
+void can_os_printerr(int ret)
+{
+    if (ret >= 0) return;
+				switch(ret)
+				{					
+	case  -1: PRINT_ERROR("Error: can_os: Input string too long (>31)\n");
+		break;
+	case  -2: PRINT_ERROR("Error: can_os: Input string too short (<15)\n");
+		break;
+	case  -3: PRINT_ERROR("Error: can_os: Illegal hex char in input string");
+		break;
+	case  -4: PRINT_ERROR("Error: can_os: Illegal CAN id: 29b low ord bits present with 11b IDE flag off\n");
+		break;
+	case  -5: PRINT_ERROR("Error: can_os: Illegal DLC\n");
+		break;
+	case  -6: PRINT_ERROR("Error: can_os: Checksum error\n");
+		break;
+	default:  PRINT_ERROR("Error: can_os: error not classified\n");
+		break;
+				}
+    return;
 }

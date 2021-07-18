@@ -290,7 +290,7 @@ int main(int argc, char **argv)
 			return 0;
 
 		case 'n':
-			disable_beacon=1;
+//			disable_beacon=1;
 			break;
 
 		case 'h':
@@ -344,80 +344,7 @@ int main(int argc, char **argv)
 	sigaction(SIGINT, &sigint_action, NULL);
 
 	determine_adress();
-
-	if(!disable_beacon) {
-		PRINT_VERBOSE("creating broadcast thread...\n");
-		i = pthread_create(&beacon_thread, NULL, &beacon_loop, NULL);
-		if(i)
-			PRINT_ERROR("could not create broadcast thread.\n");
-	} else {
-		PRINT_VERBOSE("Discovery beacon disabled\n");
-	}
-
-	if (afuxname) {
-
-		/* create PF_UNIX socket */
-		if((sl = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
-			perror("unixsocket");
-			exit(1);
-		}
-
-		unaddr.sun_family = AF_UNIX;
-		if (strlen(afuxname) > sizeof(unaddr.sun_path)-3) {
-			printf("afuxname is too long.\n");
-			exit(1);
-		}
-
-		/* when the given afuxname starts with a '/' we assume the path name scheme, e.g.
-		 * /var/run/socketcand or /tmp/socketcand-afunix-socket
-		 * Without the leading '/' we use the string as abstract socket address.
-		 */
-
-		if (afuxname[0] == '/') {
-			strcpy(&unaddr.sun_path[0], afuxname);
-			/* due to the trailing \0 in path name definition we can write the entire struct */
-			unaddrlen = sizeof(unaddr);
-		} else {
-			strcpy(&unaddr.sun_path[1], afuxname);
-			unaddr.sun_path[0] = 0;
-			/* abtract name length definition without trailing \0 but with leading \0 */
-			unaddrlen = strlen(afuxname) + sizeof(unaddr.sun_family) + 1;
-		}
-		PRINT_VERBOSE("binding unix socket to '%s' with unaddrlen %d\n", afuxname, unaddrlen);
-		if(bind(sl,(struct sockaddr*)&unaddr, unaddrlen) < 0) {
-			perror("unixbind");
-			exit(-1);
-		}
-
-		if (listen(sl,3) != 0) {
-			perror("unixlisten");
-			exit(1);
-		}
-
-		while (1) {
-			remote_unaddrlen = sizeof(struct sockaddr_un);
-			client_socket = accept(sl,(struct sockaddr *)&remote_unaddr, &remote_unaddrlen);
-			if (client_socket > 0 ){
-				if (fork())
-					close(client_socket);
-				else
-					break;
-			}
-			else {
-				if (errno != EINTR) {
-					/*
-					 * If the cause for the error was NOT the
-					 * signal from a dying child => give an error
-					 */
-					perror("accept");
-					exit(1);
-				}
-			}
-		}
-
-		PRINT_VERBOSE("client connected\n");
-
-	} else {
+	{ // this { used to be after an else
 
 		/* create PF_INET socket */
 
@@ -483,194 +410,32 @@ int main(int argc, char **argv)
 	while(1) {
 		switch(state) {
 		case STATE_NO_BUS:
-//			if(previous_state != STATE_NO_BUS) {
-//				strcpy(buf, "< hi >");
-//				send(client_socket, buf, strlen(buf), 0);
-//				previous_state = STATE_NO_BUS;
-//			}
-//			/* client has to start with a command */
-//			i = receive_command(client_socket, (char *) &buf);
-//			if(i != 0) {
-//				PRINT_ERROR("Connection terminated while waiting for command.\n");
-//				state = STATE_SHUTDOWN;
-//				break;
-//			}
 
-//			if(!strncmp("< open ", buf, 7)) {
-//				sscanf(buf, "< open %s>", bus_name);
-if (!( strcmp(bus_name,"can0" ) || 
-	   strcmp(bus_name,"can1" ) ||
-	   strcmp(bus_name,"vcan0") ||
-	   strcmp(bus_name,"vcan1") )){
+			if (!(  strcmp(bus_name,"can0" ) || 
+	   				strcmp(bus_name,"can1" ) ||
+	   				strcmp(bus_name,"vcan0") ||
+	   				strcmp(bus_name,"vcan1") )){
 		   PRINT_ERROR("Command line option i not can0, can1, vcan0, vcan1\n")
 		   state = STATE_SHUTDOWN;
 		   break;
-	   }
-	   printf("bus_name %s\n",bus_name);	
-				/* check if access to this bus is allowed */
+	   		}
+	   		printf("bus_name %s\n",bus_name);	
+			/* check if access to this bus is allowed */
 				found = 0;
 				for(i=0;i<interface_count;i++) {
 					if(!strcmp(interface_names[i], bus_name))
 						found = 1;
 				}
 
-//				if(found) {
-//					strcpy(buf, "< ok >");
-//					send(client_socket, buf, strlen(buf), 0);
-//					state = STATE_BCM;
-//					break;
-//				} else {
-//					PRINT_INFO("client tried to access unauthorized bus.\n");
-//					strcpy(buf, "< error could not open bus >");
-//					send(client_socket, buf, strlen(buf), 0);
-//					state = STATE_SHUTDOWN;
-//				}
-//			} else {
-//				PRINT_ERROR("unknown command '%s'.\n", buf);
-//				strcpy(buf, "< error unknown command >");
-//				send(client_socket, buf, strlen(buf), 0);
-//			}
-//			break;
-
-//		case STATE_BCM:
-//			state_bcm();
-//			break;
 state = STATE_RAW;
 		case STATE_RAW:
 			state_raw();
-			break;
-		case STATE_ISOTP:
-			state_isotp();
-			break;
-		case STATE_CONTROL:
-			state_control();
 			break;
 
 		case STATE_SHUTDOWN:
 			PRINT_VERBOSE("Closing client connection.\n");
 			close(client_socket);
 			return 0;
-		}
-	}
-	return 0;
-}
-
-/* reads all available data from the socket into the command buffer.
- * returns '-1' if no command could be received.
- */
-int receive_command(int socket, char *buffer) {
-	int i, start, stop;
-
-	/* if there are no more elements in the buffer read more data from the
-	 * socket.
-	 */
-	if(!more_elements) {
-		cmd_index += read(socket, cmd_buffer+cmd_index, MAXLEN-cmd_index);
-#ifdef DEBUG_RECEPTION
-		PRINT_VERBOSE("\tRead from socket\n");
-#endif
-	}
-
-#ifdef DEBUG_RECEPTION
-	PRINT_VERBOSE("\tcmd_index now %d\n", cmd_index);
-#endif
-
-	more_elements = 0;
-
-	/* find first '<' in string */
-	start = -1;
-	for(i=0;i<cmd_index;i++) {
-		if(cmd_buffer[i] == '<') {
-			start = i;
-			break;
-		}
-	}
-
-	/*
-	 * if there is no '<' in string it makes no sense to keep data because
-	 * we will never be able to construct a command of it
-	 */
-	if(start == -1) {
-		cmd_index = 0;
-#ifdef DEBUG_RECEPTION
-		PRINT_VERBOSE("\tBad data. No element found\n");
-#endif
-		return -1;
-	}
-
-	/* check whether the command is completely in the buffer */
-	stop = -1;
-	for(i=1;i<cmd_index;i++) {
-		if(cmd_buffer[i] == '>') {
-			stop = i;
-			break;
-		}
-	}
-
-	/* if no '>' is in the string we have to wait for more data */
-	if(stop == -1) {
-#ifdef DEBUG_RECEPTION
-		PRINT_VERBOSE("\tNo full element in the buffer\n");
-#endif
-		return -1;
-	}
-
-#ifdef DEBUG_RECEPTION
-	PRINT_VERBOSE("\tElement between %d and %d\n", start, stop);
-#endif
-
-	/* copy string to new destination and correct cmd_buffer */
-	for(i=start;i<=stop;i++) {
-		buffer[i-start] = cmd_buffer[i];
-	}
-	buffer[i-start] = '\0';
-
-#ifdef DEBUG_RECEPTION
-	PRINT_VERBOSE("\tElement is '%s'\n", buffer);
-#endif
-
-	/* if only this message was in the buffer we're done */
-	if(stop == cmd_index-1) {
-		cmd_index = 0;
-	} else {
-		/* check if there is a '<' after the stop */
-		start = -1;
-		for(i=stop;i<cmd_index;i++) {
-			if(cmd_buffer[i] == '<') {
-				start = i;
-				break;
-			}
-		}
-
-		/* if there is none it is only garbage we can remove */
-		if(start == -1) {
-			cmd_index = 0;
-#ifdef DEBUG_RECEPTION
-			PRINT_VERBOSE("\tGarbage after the first element in the buffer\n");
-#endif
-			return 0;
-			/* otherwise we copy the valid data to the beginning of the buffer */
-		} else {
-			for(i=start;i<cmd_index;i++) {
-				cmd_buffer[i-start] = cmd_buffer[i];
-			}
-			cmd_index -= start;
-
-			/* check if there is at least one full element in the buffer */
-			stop = -1;
-			for(i=1;i<cmd_index;i++) {
-				if(cmd_buffer[i] == '>') {
-					stop = i;
-					break;
-				}
-			}
-
-			if(stop != -1) {
-				more_elements = 1;
-#ifdef DEBUG_RECEPTION
-				PRINT_VERBOSE("\tMore than one full element in the buffer.\n");
-#endif
-			}
 		}
 	}
 	return 0;

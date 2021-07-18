@@ -9,10 +9,13 @@
 #define __EXTRACT_LINE_H
 
 /* **************************************************************************************/
- char *extract_line_add(char *pin, int n);
+ void extract_line_add(char *pin, int n);
 /* @brief	: Add chars from 'read()' to big buffer and build output line
  * @param	: piin = pointer to input chars from 'read'()' (not used if n = 0)
  * @param	: n = number of chars in input
+ * ************************************************************************************** */
+ char *extract_line_get(void);
+/* @brief	: Attempt to extract a line from the buffer 
  * @return	:  NULL = no line available. Waiting for more chars (for a valid line)
  *			:  pointer to '\0' terminated string
  * Note: output line (if available) must be "consumed" before next call to this routine
