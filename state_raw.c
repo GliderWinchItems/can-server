@@ -87,10 +87,7 @@ void state_raw() {
 	FD_ZERO(&readfds);
 	FD_SET(raw_socket, &readfds);
 	FD_SET(client_socket, &readfds);
-	/*
-	 * Check if there are more elements in the element buffer before calling select() and
-	 * blocking for new packets.
-	 */
+	
 	ret = select((raw_socket > client_socket)?raw_socket+1:client_socket+1, &readfds, NULL, NULL, NULL);
 
 	if(ret < 0) 
@@ -179,6 +176,11 @@ printf("sctr: %d ",sctr)						;
 					}
 				} while (pret != NULL);
 			}
-		} while (pret != NULL);
+			if (ret < 0)
+			{
+				PRINT_ERROR("Error reading frame from client socket\n")
+			}
+		} while (ret > 0);
 	}
+	return;
 }

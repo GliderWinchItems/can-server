@@ -9,8 +9,14 @@ sourcefiles = $(srcdir)/socketcand.c \
 	$(srcdir)/extract-line.c 
 
 executable = socketcand
-sourcefiles_cl = $(srcdir)/socketcandcl.c
+
+sourcefiles_cl = $(srcdir)/socketcandcl.c \
+	$(srcdir)/can-os.c \
+	$(srcdir)/can-so.c \
+	$(srcdir)/extract-line.c 
+
 executable_cl = socketcandcl
+
 srcdir = .
 prefix = /usr/local
 exec_prefix = ${prefix}
@@ -34,7 +40,7 @@ socketcand: $(sourcefiles)
 	$(CC) $(CFLAGS) $(DEFS) $(CPPFLAGS) $(LDFLAGS) -I . -I ./include -o $(executable) $(sourcefiles) $(LIBS)
 
 socketcandcl: $(sourcefiles_cl)
-	$(CC) $(CFLAGS) $(DEFS) $(CPPFLAGS) $(LDFLAGS) -I . -I ./include -o $(executable_cl) $(sourcefiles_cl)
+	$(CC) $(CFLAGS) $(DEFS) $(CPPFLAGS) $(LDFLAGS) -I . -I ./include -o $(executable_cl) $(sourcefiles_cl) 
 
 clean:
 	rm -f $(executable) $(executable_cl) *.o

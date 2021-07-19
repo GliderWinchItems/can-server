@@ -196,7 +196,6 @@ int main(int argc, char **argv)
 	socklen_t sin_size = sizeof(clientaddr);
 	struct sigaction signalaction, sigint_action;
 	sigset_t sigset;
-	char buf[MAXLEN];
 	int c;
 	char* busses_string;
 #ifdef HAVE_LIBCONFIG
@@ -414,10 +413,11 @@ int main(int argc, char **argv)
 			if (!(  strcmp(bus_name,"can0" ) || 
 	   				strcmp(bus_name,"can1" ) ||
 	   				strcmp(bus_name,"vcan0") ||
-	   				strcmp(bus_name,"vcan1") )){
-		   PRINT_ERROR("Command line option i not can0, can1, vcan0, vcan1\n")
-		   state = STATE_SHUTDOWN;
-		   break;
+	   				strcmp(bus_name,"vcan1") ))
+			{
+		   		PRINT_ERROR("Command line option i not can0, can1, vcan0, vcan1\n")
+		   		state = STATE_SHUTDOWN;
+		   		break;
 	   		}
 	   		printf("bus_name %s\n",bus_name);	
 			/* check if access to this bus is allowed */
@@ -426,6 +426,7 @@ int main(int argc, char **argv)
 					if(!strcmp(interface_names[i], bus_name))
 						found = 1;
 				}
+				if (found != 1) PRINT_ERROR("bus_name not found\n")
 
 state = STATE_RAW;
 		case STATE_RAW:
