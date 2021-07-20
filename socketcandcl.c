@@ -147,6 +147,8 @@ int main(int argc, char **argv)
 		if(c == -1)
 			break;
 
+printf("c: %d\n",c);
+
 		switch(c) {
 		case 0:
 			/* If this option set a flag, do nothing else now. */
@@ -169,8 +171,11 @@ int main(int argc, char **argv)
 			break;
 
 		case 'i':
-			strcpy(rdev, strtok(optarg, ","));
-			strcpy(ldev, strtok(NULL, ","));
+//			strcpy(rdev, strtok(optarg, ","));
+//			strcpy(ldev, strtok(NULL, ","));
+	strcpy(rdev, optarg);
+	strcpy(ldev, optarg);
+	printf("i OPTION: bus_name:%s\n",ldev);
 			break;
 
 		case 'h':
@@ -191,6 +196,7 @@ int main(int argc, char **argv)
 		}
 	}
 
+printf("Command options OK\n");
 
 	sigint_action.sa_handler = &sigint;
 	sigemptyset(&sigint_action.sa_mask);
@@ -226,7 +232,6 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-
 	for(;;) 
 	{
 		switch(state) 
@@ -255,10 +260,10 @@ inline void state_connected()
 	static struct ifreq ifr;
 	static struct sockaddr_can addr;
 	fd_set readfds;
+	struct iovec iov;
 
 	if(previous_state != STATE_CONNECTED) 
 	{
-
 		if((raw_socket = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
 			PRINT_ERROR("Error while creating RAW socket %s\n", strerror(errno));
 			state = STATE_SHUTDOWN;
@@ -277,8 +282,7 @@ inline void state_connected()
 
 		/* turn on timestamp */
 		const int timestamp_on = 0;
-		if(setsockopt(raw_socket, SOL_SOCKET, SO_TIMESTAMP,
-			      &timestamp_on, sizeof(timestamp_on)) < 0) {
+		if(setsockopt(raw_socket, SOL_SOCKET, SO_TIMESTAMP, &timestamp_on, sizeof(timestamp_on)) < 0) {
 			PRINT_ERROR("Could not enable CAN timestamps\n");
 			state = STATE_SHUTDOWN;
 			return;
@@ -289,6 +293,13 @@ inline void state_connected()
 			state = STATE_SHUTDOWN;
 			return;
 		}
+
+		iov.iov_base = &frame;
+		msg.msg_name = &addr;
+		msg.msg_iov = &iov;
+		msg.msg_iovlen = 1;
+		msg.msg_control = &ctrlmsg;
+
 		previous_state = STATE_CONNECTED;
 	}
 
@@ -310,6 +321,7 @@ inline void state_connected()
 
 	if(FD_ISSET(raw_socket, &readfds)) 
 	{
+		iov.iov_len = sizeof(frame);
 		msg.msg_namelen = sizeof(addr);
 		msg.msg_flags = 0;
 		msg.msg_controllen = sizeof(ctrlmsg);
@@ -321,11 +333,11 @@ inline void state_connected()
 		} 
 		else 
 		{
-
 			if(frame.can_id & CAN_ERR_FLAG) 
 			{
 				canid_t class = frame.can_id  & CAN_EFF_MASK;
 				ret = sprintf(buf, "< error %03X %ld.%06ld >", class, tv.tv_sec, tv.tv_usec);
+printf("Err: CAN_ERR_FLAG\n");
 				send(server_socket, buf, strlen(buf), 0);
 			} 
 			else if(frame.can_id & CAN_RTR_FLAG) 
@@ -334,14 +346,17 @@ inline void state_connected()
 			} 
 			else 
 			{	
+	     if (frame.can_id != 0)
+		 {
 				/* "so" = Convert from Socket/Seeed to Our/Old ascii format */
 				if (can_so_cnvt(&canall_r,&frame) != 0)
 				{
 					ret += sprintf(buf,"\tERROR %d: CAN-SO ", ret);
 				}
-				ret += sprintf(buf,"%s",canall_r.caa);
+				ret += sprintf(buf,"%s",canall_r.caa);				
 				send(server_socket, buf, strlen(buf), 0);
 			}
+		 }
 		}
 	}
 
@@ -375,7 +390,7 @@ printf("sctr: %d ",sctr)						;
 					}
 				} while (pret != NULL);
 			}
-		} while (pret != NULL);
+		} while (ret > 0);
 	}
  }
 }
