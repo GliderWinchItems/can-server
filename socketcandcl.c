@@ -128,7 +128,6 @@ int main(int argc, char **argv)
 	strcpy(rdev, "can0");
 	server_string = malloc(strlen("localhost"));
 
-
 	/* Parse commandline arguments */
 	for(;;) {
 		/* getopt_long stores the option index here. */
@@ -146,8 +145,6 @@ int main(int argc, char **argv)
 
 		if(c == -1)
 			break;
-
-printf("c: %d\n",c);
 
 		switch(c) {
 		case 0:
@@ -195,8 +192,6 @@ printf("c: %d\n",c);
 			return -1;
 		}
 	}
-
-printf("Command options OK\n");
 
 	sigint_action.sa_handler = &sigint;
 	sigemptyset(&sigint_action.sa_mask);
@@ -364,33 +359,30 @@ printf("Err: CAN_ERR_FLAG\n");
 
 	if(FD_ISSET(server_socket, &readfds)) 
 	{
-		do /* Read socket until no chars. */
-		{
-			ret = read(server_socket, xbuf, XBUFSZ);
-			if (ret > 0)
-			{ // Here, some additional incoming chars from the stream 
-				extract_line_add(xbuf,ret); // Add to a buffer
+		ret = read(server_socket, xbuf, XBUFSZ);
+		if (ret > 0)
+		{ // Here, some additional incoming chars from the stream 
+			extract_line_add(xbuf,ret); // Add to a buffer
 
-				do /* Extract:Convert:send lines until no lines in buffer. */
-				{				
-					pret = extract_line_get(); // Attempt to get line from buffer
-					if (pret != NULL)
-					{ // Here, pret points to a complete line
-						ret1 = can_os_cnvt(&frame,&canall_w,pret);
-						if (ret1 == 0)
-						{ // Here, conversion to output frame good and ready to send
-							send(raw_socket, &frame, sizeof(struct can_frame), 0);
+			do /* Extract:Convert:send lines until no lines in buffer. */
+			{				
+				pret = extract_line_get(); // Attempt to get line from buffer
+				if (pret != NULL)
+				{ // Here, pret points to a complete line
+					ret1 = can_os_cnvt(&frame,&canall_w,pret);
+					if (ret1 == 0)
+					{ // Here, conversion to output frame good and ready to send
+						send(raw_socket, &frame, sizeof(struct can_frame), 0);
 sctr += 1;							
-						}
-						else
-						{ // Here, some sort of error with the ascii line
-printf("sctr: %d ",sctr)						;
-							can_os_printerr(ret1); // Nice format error output
-						}
 					}
-				} while (pret != NULL);
-			}
-		} while (ret > 0);
+					else
+					{ // Here, some sort of error with the ascii line
+printf("sctr: %d ",sctr)						;
+						can_os_printerr(ret1); // Nice format error output
+					}
+				}
+			} while (pret != NULL);
+		}
 	}
  }
 }

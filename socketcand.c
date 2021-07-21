@@ -74,6 +74,8 @@
 #include "statistics.h"
 #include "beacon.h"
 
+#include <fcntl.h>
+
 void print_usage(void);
 void sigint();
 void childdied();

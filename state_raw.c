@@ -26,6 +26,8 @@
 #include "can-os.h"
 #include "extract-line.h"
 
+int rctr;
+
 int raw_socket;
 struct ifreq ifr;
 struct sockaddr_can addr;
@@ -82,12 +84,14 @@ void state_raw() {
 		msg.msg_control = &ctrlmsg;
 
 		previous_state = STATE_RAW;
+		
+
 	}
 
 	FD_ZERO(&readfds);
 	FD_SET(raw_socket, &readfds);
-	FD_SET(client_socket, &readfds);
-	
+	FD_SET(client_socket, &readfds);	
+
 	ret = select((raw_socket > client_socket)?raw_socket+1:client_socket+1, &readfds, NULL, NULL, NULL);
 
 	if(ret < 0) 
@@ -150,37 +154,34 @@ static int32_t sctr = 0; // Debug counter
 
 	if(FD_ISSET(client_socket, &readfds)) 
 	{
-		do /* Read socket until no chars. */
-		{
-			ret = read(client_socket, xbuf, XBUFSZ);
-			if (ret > 0)
-			{ // Here, some additional incoming chars from the stream 
-				extract_line_add(xbuf,ret); // Add to a buffer
+		ret = read(client_socket, xbuf, XBUFSZ);
+		if (ret > 0)
+		{ // Here, some additional incoming chars from the stream 
+			extract_line_add(xbuf,ret); // Add to a buffer
 
-				do /* Extract:Convert:send lines until no lines in buffer. */
-				{				
-					pret = extract_line_get(); // Attempt to get line from buffer
-					if (pret != NULL)
-					{ // Here, pret points to a complete line
-						ret1 = can_os_cnvt(&frame,&canall_w,pret);
-						if (ret1 == 0)
-						{ // Here, conversion to output frame good and ready to send
-							send(raw_socket, &frame, sizeof(struct can_frame), 0);
+			do /* Extract:Convert:send lines until no lines in buffer. */
+			{				
+				pret = extract_line_get(); // Attempt to get line from buffer
+				if (pret != NULL)
+				{ // Here, pret points to a complete line
+					ret1 = can_os_cnvt(&frame,&canall_w,pret);
+					if (ret1 == 0)
+					{ // Here, conversion to output frame good and ready to send
+						send(raw_socket, &frame, sizeof(struct can_frame), 0);
 sctr += 1;							
-						}
-						else
-						{ // Here, some sort of error with the ascii line
-printf("sctr: %d ",sctr)						;
-							can_os_printerr(ret1); // Nice format error output
-						}
 					}
-				} while (pret != NULL);
-			}
-			if (ret < 0)
-			{
-				PRINT_ERROR("Error reading frame from client socket\n")
-			}
-		} while (ret > 0);
+					else
+					{ // Here, some sort of error with the ascii line
+printf("sctr: %d ",sctr)						;
+						can_os_printerr(ret1); // Nice format error output
+					}
+				}
+			} while (pret != NULL);
+		}
+		if (ret < 0)
+		{
+			PRINT_ERROR("Error reading frame from client socket\n")
+		}
 	}
 	return;
 }
