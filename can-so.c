@@ -132,6 +132,7 @@ int can_so_cnvt(struct CANALL *pall, struct can_frame *pframe)
 
     /* Complete ascii-hex string */
     *pa++ = '\n'; // Line terminator
+    pall->caalen = pa - &pall->caa[0];
     *pa = '\0';   // String terminator
     return err;
 }

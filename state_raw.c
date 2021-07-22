@@ -25,20 +25,20 @@
 #include "can-os.h"
 #include "extract-line.h"
 
-int rctr;
-
 int raw_socket;
 struct ifreq ifr;
 struct sockaddr_can addr;
 struct msghdr msg;
 struct can_frame frame;
 struct iovec iov;
-char ctrlmsg[CMSG_SPACE(sizeof(struct timeval)) + CMSG_SPACE(sizeof(__u32))];
-struct timeval tv;
-struct cmsghdr *cmsg;
+
 
 struct CANALL canall_r; // Our format: 'r' = read from CAN bus
 struct CANALL canall_w; // Our format: 'w' = write to CAN bus
+
+static char xbuf[XBUFSZ]; // See socketcand.h for XBUFSZ
+static char *pret; // extract_line_get() return points to line
+
 
 void state_raw() {
 	char buf[MAXLEN];
@@ -80,13 +80,12 @@ void state_raw() {
 		msg.msg_name = &addr;
 		msg.msg_iov = &iov;
 		msg.msg_iovlen = 1;
-		msg.msg_control = &ctrlmsg;
 
 		previous_state = STATE_RAW;
-		
-
 	}
-
+/* Do endless loop here, rather than exiting routine to socketcand and back */
+while(1==1)
+ {
 	FD_ZERO(&readfds);
 	FD_SET(raw_socket, &readfds);
 	FD_SET(client_socket, &readfds);	
@@ -105,51 +104,27 @@ void state_raw() {
 		iov.iov_len = sizeof(frame);
 		msg.msg_namelen = sizeof(addr);
 		msg.msg_flags = 0;
-		msg.msg_controllen = sizeof(ctrlmsg);
 
 		ret = recvmsg(raw_socket, &msg, 0);
 		if(ret < sizeof(struct can_frame)) 
 		{
 			PRINT_ERROR("Error reading frame from RAW socket\n")
-				} else {
-			/* read timestamp data */
-			for (cmsg = CMSG_FIRSTHDR(&msg);
-			     cmsg && (cmsg->cmsg_level == SOL_SOCKET);
-			     cmsg = CMSG_NXTHDR(&msg,cmsg)) 
+		}
+		else 
+		{ 
+			/* "so" = Convert from Socket/Seeed to Our/Old ascii format */
+			if (can_so_cnvt(&canall_r,&frame) != 0)
 			{
-				if (cmsg->cmsg_type == SO_TIMESTAMP) 
-				{
-					tv = *(struct timeval *)CMSG_DATA(cmsg);
-				}
+				sprintf(buf,"ERROR %d %08X: CAN-SO \n", ret, frame.can_id);
+				send(client_socket,buf, strlen(buf), 0);
+				if (verbose_flag == 1) { printf("%s",buf); }
 			}
-
-			if(frame.can_id & CAN_ERR_FLAG) 
+			else
 			{
-				canid_t class = frame.can_id  & CAN_EFF_MASK;
-				ret = sprintf(buf, "< error %03X %ld.%06ld >", class, tv.tv_sec, tv.tv_usec);
-				send(client_socket, buf, strlen(buf), 0);
-			} 
-			else if(frame.can_id & CAN_RTR_FLAG) 
-			{
-				/* TODO implement */
-			} 
-			else 
-			{	
-				/* "so" = Convert from Socket/Seeed to Our/Old ascii format */
-				if (can_so_cnvt(&canall_r,&frame) != 0)
-				{
-					ret += sprintf(buf,"\tERROR %d: CAN-SO ", ret);
-				}
-				ret += sprintf(buf,"%s",canall_r.caa);
-				send(client_socket, buf, strlen(buf), 0);
+				send(client_socket, canall_r.caa, canall_r.caalen, 0);
 			}
 		}
 	}
-
-static char xbuf[XBUFSZ]; // See socketcand.h for XBUFSZ
-static char *pret; // extract_line_get() return points to line
-
-static int32_t sctr = 0; // Debug counter
 
 	if(FD_ISSET(client_socket, &readfds)) 
 	{
@@ -167,11 +142,9 @@ static int32_t sctr = 0; // Debug counter
 					if (ret1 == 0)
 					{ // Here, conversion to output frame good and ready to send
 						send(raw_socket, &frame, sizeof(struct can_frame), 0);
-sctr += 1;							
 					}
 					else
 					{ // Here, some sort of error with the ascii line
-printf("sctr: %d ",sctr)						;
 						can_os_printerr(ret1); // Nice format error output
 					}
 				}
@@ -182,5 +155,6 @@ printf("sctr: %d ",sctr)						;
 			PRINT_ERROR("Error reading frame from client socket\n")
 		}
 	}
+ }
 	return;
 }

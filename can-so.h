@@ -40,6 +40,7 @@ struct CANALL {
     struct CANRCVBUF can; // Legacy binary, i.e. "our binary format"
     char    caa[CANBINSIZE*2]; // cba array converted to hex plus '\n' and '\0'
     uint8_t cba[CANBINSIZE];   // binary array
+    uint8_t caalen; // length of caa array (e.g. strlen(caa))
     uint8_t seq; // First byte of line sequence number   
 };
 

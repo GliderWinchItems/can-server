@@ -72,24 +72,18 @@
 
 #include "socketcand.h"
 
-#include <fcntl.h>
-
 void print_usage(void);
 void sigint();
 void childdied();
 void determine_adress();
-int receive_command(int socket, char *buf);
 
 int sl, client_socket;
-pthread_t beacon_thread, statistics_thread;
 char **interface_names;
 int interface_count=0;
 int port;
 int verbose_flag=0;
 int daemon_flag=0;
-int disable_beacon=0;
-		int state = STATE_NO_BUS;
-//		int state = STATE_BCM; //
+int state = STATE_NO_BUS;
 int previous_state = -1;
 char bus_name[MAX_BUSNAME];
 char cmd_buffer[MAXLEN];
@@ -103,91 +97,6 @@ socklen_t unaddrlen;
 struct sockaddr_un remote_unaddr;
 socklen_t remote_unaddrlen;
 char* interface_string;
-
-int state_changed(char *buf, int current_state)
-{
-	if(!strcmp("< rawmode >", buf))
-		state = STATE_RAW;
-	else if(!strcmp("< bcmmode >", buf))
-		state = STATE_BCM;
-	else if(!strcmp("< isotpmode >", buf))
-		state = STATE_ISOTP;
-	else if(!strcmp("< controlmode >", buf))
-		state = STATE_CONTROL;
-
-	if (current_state != state)
-		PRINT_INFO("state changed to %d\n", state);
-
-	return (current_state != state);
-}
-
-char *element_start(char *buf, int element)
-{
-	int len = strlen(buf);
-	int elem, i;
-
-	/*
-	 * < elem1 elem2 elem3 >
-	 *
-	 * get the position of the requested element as char pointer
-	 */
-
-	for (i=0, elem=0; i<len; i++) {
-
-		if (buf[i] == ' ') {
-			elem++;
-
-			/* step to next non-space */
-			while (buf[i] == ' ')
-				i++;
-
-			if (i >= len)
-				return NULL;
-		}
-
-		if (elem == element)
-			return &buf[i];
-	}
-	return NULL;
-}
-
-int element_length(char *buf, int element)
-{
-	int len;
-	int j = 0;
-	char *elembuf;
-
-	/*
-	 * < elem1 elem2 elem3 >
-	 *
-	 * get the length of the requested element in bytes
-	 */
-
-	elembuf = element_start(buf, element);
-	if (elembuf == NULL)
-		return 0;
-
-	len = strlen(elembuf);
-
-	while (j < len && elembuf[j] != ' ')
-		j++;
-
-	return j;
-}
-
-int asc2nibble(char c)
-{
-	if ((c >= '0') && (c <= '9'))
-		return c - '0';
-
-	if ((c >= 'A') && (c <= 'F'))
-		return c - 'A' + 10;
-
-	if ((c >= 'a') && (c <= 'f'))
-		return c - 'a' + 10;
-
-	return 16; /* error */
-}
 
 int main(int argc, char **argv)
 {
@@ -306,8 +215,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-
-
 	/* parse busses */
 	for(i=0;;i++) {
 		if(busses_string[i] == '\0')
@@ -330,7 +237,6 @@ int main(int argc, char **argv)
 		openlog("socketcand", 0, LOG_DAEMON);
 	}
 
-
 	sigemptyset(&sigset);
 	signalaction.sa_handler = &childdied;
 	signalaction.sa_mask = sigset;
@@ -343,10 +249,8 @@ int main(int argc, char **argv)
 	sigaction(SIGINT, &sigint_action, NULL);
 
 	determine_adress();
-	{ // this { used to be after an else
-
+	{ 
 		/* create PF_INET socket */
-
 		if((sl = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
 			perror("inetsocket");
 			exit(1);
