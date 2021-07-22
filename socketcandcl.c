@@ -88,10 +88,6 @@ struct CANALL canall_w; // Our format: 'w' = write to CAN bus
 static int ret1;
 static char xbuf[XBUFSZ]; // See socketcand.h for XBUFSZ
 static char *pret; // extract_line_get() return points to line
-static int32_t sctr = 0; // Debug counter
-char ctrlmsg[CMSG_SPACE(sizeof(struct timeval)) + CMSG_SPACE(sizeof(__u32))];
-struct timeval tv;
-struct cmsghdr *cmsg;
 int daemon_flag=0; // logfile flag (see socketcand.c)
 
 
@@ -168,11 +164,9 @@ int main(int argc, char **argv)
 			break;
 
 		case 'i':
-//			strcpy(rdev, strtok(optarg, ","));
-//			strcpy(ldev, strtok(NULL, ","));
 	strcpy(rdev, optarg);
 	strcpy(ldev, optarg);
-	printf("i OPTION: bus_name:%s\n",ldev);
+//	printf("i OPTION: bus_name:%s\n",ldev);
 			break;
 
 		case 'h':
@@ -293,7 +287,7 @@ inline void state_connected()
 		msg.msg_name = &addr;
 		msg.msg_iov = &iov;
 		msg.msg_iovlen = 1;
-		msg.msg_control = &ctrlmsg;
+//		msg.msg_control = &ctrlmsg;
 
 		previous_state = STATE_CONNECTED;
 	}
@@ -319,43 +313,27 @@ inline void state_connected()
 		iov.iov_len = sizeof(frame);
 		msg.msg_namelen = sizeof(addr);
 		msg.msg_flags = 0;
-		msg.msg_controllen = sizeof(ctrlmsg);
 
 		ret = recvmsg(raw_socket, &msg, 0);
 		if(ret < sizeof(struct can_frame)) 
 		{
 			PRINT_ERROR("Error reading frame from RAW socket\n")
-		} 
+		}
 		else 
-		{
-			if(frame.can_id & CAN_ERR_FLAG) 
+		{ 
+			/* "so" = Convert from Socket/Seeed to Our/Old ascii format */
+			if (can_so_cnvt(&canall_r,&frame) != 0)
 			{
-				canid_t class = frame.can_id  & CAN_EFF_MASK;
-				ret = sprintf(buf, "< error %03X %ld.%06ld >", class, tv.tv_sec, tv.tv_usec);
-printf("Err: CAN_ERR_FLAG\n");
-				send(server_socket, buf, strlen(buf), 0);
-			} 
-			else if(frame.can_id & CAN_RTR_FLAG) 
-			{
-				/* TODO implement */
-			} 
-			else 
-			{	
-	     if (frame.can_id != 0)
-		 {
-				/* "so" = Convert from Socket/Seeed to Our/Old ascii format */
-				if (can_so_cnvt(&canall_r,&frame) != 0)
-				{
-					ret += sprintf(buf,"\tERROR %d: CAN-SO ", ret);
-				}
-				ret += sprintf(buf,"%s",canall_r.caa);				
-				send(server_socket, buf, strlen(buf), 0);
+				sprintf(buf,"ERROR %d %08X: CAN-SO \n", ret, frame.can_id);
+				send(server_socket,buf, strlen(buf), 0);
+				if (verbose_flag == 1) { printf("%s",buf); }
 			}
-		 }
+			else
+			{
+				send(server_socket, canall_r.caa, canall_r.caalen, 0);
+			}
 		}
 	}
-
-
 
 	if(FD_ISSET(server_socket, &readfds)) 
 	{
@@ -373,18 +351,21 @@ printf("Err: CAN_ERR_FLAG\n");
 					if (ret1 == 0)
 					{ // Here, conversion to output frame good and ready to send
 						send(raw_socket, &frame, sizeof(struct can_frame), 0);
-sctr += 1;							
 					}
 					else
 					{ // Here, some sort of error with the ascii line
-printf("sctr: %d ",sctr)						;
 						can_os_printerr(ret1); // Nice format error output
 					}
 				}
 			} while (pret != NULL);
 		}
+		if (ret < 0)
+		{
+			PRINT_ERROR("Error reading frame from client socket\n")
+		}
 	}
  }
+	return;
 }
 
 void print_usage(void)
