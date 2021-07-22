@@ -2,7 +2,6 @@
 
 #include "config.h"
 #include "socketcand.h"
-#include "statistics.h"
 
 #include <stdio.h>
 #include <stdlib.h>

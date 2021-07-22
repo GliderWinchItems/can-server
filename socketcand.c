@@ -71,8 +71,6 @@
 #endif
 
 #include "socketcand.h"
-#include "statistics.h"
-#include "beacon.h"
 
 #include <fcntl.h>
 
@@ -206,8 +204,8 @@ int main(int argc, char **argv)
 
 	/* set default config settings */
 	port = PORT;
-	description = malloc(sizeof(BEACON_DESCRIPTION));
-	strcpy(description, BEACON_DESCRIPTION);
+//	description = malloc(sizeof(BEACON_DESCRIPTION));
+//	strcpy(description, BEACON_DESCRIPTION);
 	interface_string = malloc(strlen(DEFAULT_INTERFACE)+ 1);
 	strcpy(interface_string, DEFAULT_INTERFACE);
 	busses_string = malloc(strlen(DEFAULT_BUSNAME)+ 1);
@@ -476,7 +474,7 @@ void determine_adress() {
 	/* set broadcast adress */
 	broadcast_addr.sin_family = AF_INET;
 	broadcast_addr.sin_addr = ((struct sockaddr_in *) &ifr_brd.ifr_broadaddr)->sin_addr;
-	broadcast_addr.sin_port = htons(BROADCAST_PORT);
+//	broadcast_addr.sin_port = htons(BROADCAST_PORT);
 }
 
 void print_usage(void) {
