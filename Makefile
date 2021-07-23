@@ -15,7 +15,11 @@ sourcefiles_cl = $(srcdir)/socketcandcl.c \
 	$(srcdir)/can-so.c \
 	$(srcdir)/extract-line.c 
 
+sourcefiles_br = $(srcdir)/socketbridge.c 
+
 executable_cl = socketcandcl
+
+executable_br = socketbridge
 
 srcdir = .
 prefix = /usr/local
@@ -34,7 +38,7 @@ DEFS = -DHAVE_CONFIG_H
 CPPFLAGS = 
 sysroot = 
 
-all: socketcand socketcandcl
+all: socketcand socketcandcl socketbridge
 
 socketcand: $(sourcefiles)
 	$(CC) $(CFLAGS) $(DEFS) $(CPPFLAGS) $(LDFLAGS) -I . -I ./include -o $(executable) $(sourcefiles) $(LIBS)
@@ -42,8 +46,11 @@ socketcand: $(sourcefiles)
 socketcandcl: $(sourcefiles_cl)
 	$(CC) $(CFLAGS) $(DEFS) $(CPPFLAGS) $(LDFLAGS) -I . -I ./include -o $(executable_cl) $(sourcefiles_cl) 
 
+socketbridge: $(sourcefiles_br)	
+	$(CC) $(CFLAGS) $(DEFS) $(CPPFLAGS) $(LDFLAGS) -I . -I ./include -o $(executable_br) $(sourcefiles_br) 
+
 clean:
-	rm -f $(executable) $(executable_cl) *.o
+	rm -f $(executable) $(executable_cl) $(executable_br) *.o
 
 distclean:
 	rm -rf $(executable) $(executable_cl) *.o *~ Makefile config.h debian_pack configure config.log config.status autom4te.cache socketcand_*.deb
