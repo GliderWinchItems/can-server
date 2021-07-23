@@ -45,6 +45,21 @@
  *
  */
 
+/* 
+Example: socketcand starts as server for can1 with listening port 29537--
+./socketcand -l wlan0 -i can1 -v -n -v -p 29537
+
+E.g.in another terminal netcat--
+displays incoming CAN msgs
+nc 192.168.2.139 29537
+Sends file of captured CAN msgs to file can0.txt--
+nc 192.168.2.139 29537 < can0.txt
+
+E.g. 'cangateCON tool--
+cangateCON 192.168.2.139 29537
+
+*/
+
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>

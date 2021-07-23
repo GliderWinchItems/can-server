@@ -46,6 +46,12 @@
  *
  */
 
+/*
+Example: can1 connects to hub-server with hub-server on port 32127
+./socketcandcl -s 192.168.2.139 -p 32127 -i can1 -v
+*/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

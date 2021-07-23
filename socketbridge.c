@@ -4,6 +4,11 @@
 * Board              : Seeed CAN hat
 * Description        : Bridge/gateway between CAN0 and CAN1
 *******************************************************************************/
+/* Command line:
+   socketbridge <can#1> <file#1> <can#2> <file#2>
+   socketbridge can0 gate0-1 can1 gate1-0
+*/
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -164,6 +169,8 @@ int main(int argc, char **argv)
 		rs[i].msg.msg_name = &rs[i].addr;
 		rs[i].msg.msg_iov  = &rs[i].iov;
 		rs[i].msg.msg_iovlen = 1;
+
+		printf("%s ready with file %s\n",rs[i].bus_name,argv[2+2*i]);
 	}
 
  while(1)
@@ -188,12 +195,15 @@ int main(int argc, char **argv)
 		rs[0].msg.msg_flags = 0;
 
 		ret = recvmsg(rs[0].raw_socket, &rs[0].msg, 0);
+//static int ctr1 = 0;
+//printf("1st: %3d ret: %d\n", ctr1++,ret)		;
 		if(ret < sizeof(struct can_frame)) 
 		{
 			PRINT_ERROR("Error reading frame from RAW socket\n")
 		}
 		else 
 		{ 
+//printf("ID: %08X\n",rs[0].frame.can_id);
 			send(rs[1].raw_socket, &rs[0].frame, sizeof(struct can_frame), 0);
 		}
 	}
@@ -205,6 +215,8 @@ int main(int argc, char **argv)
 		rs[1].msg.msg_flags = 0;
 
 		ret = recvmsg(rs[1].raw_socket, &rs[1].msg, 0);
+//static int ctr2 = 0;
+//printf("2nd: %3d ret: %d\n", ctr2++,ret)		;
 		if(ret < sizeof(struct can_frame)) 
 		{
 			PRINT_ERROR("Error reading frame from RAW socket\n")
