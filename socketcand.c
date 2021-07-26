@@ -264,7 +264,8 @@ int main(int argc, char **argv)
 	sigaction(SIGINT, &sigint_action, NULL);
 
 	determine_adress();
-	{ 
+
+	if (1==1) { 
 		/* create PF_INET socket */
 		if((sl = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
 			perror("inetsocket");
