@@ -15,19 +15,21 @@ sourcefiles_cl = $(srcdir)/can-client.c \
 	$(srcdir)/can-so.c \
 	$(srcdir)/extract-line.c 
 
-sourcefiles_br = $(srcdir)/can-bridge.c 
+sourcefiles_br = $(srcdir)/can-bridge.c \
+	$(srcdir)/can-bridge-filter.c \
 
-sourcefiles2 = $(srcdir)/can-server2.c \
-	$(srcdir)/state_raw.c \
-	$(srcdir)/can-os.c \
-	$(srcdir)/can-so.c \
-	$(srcdir)/extract-line.c 
+
+#sourcefiles2 = $(srcdir)/can-server2.c \
+#	$(srcdir)/state_raw.c \
+#	$(srcdir)/can-os.c \
+#	$(srcdir)/can-so.c \
+#	$(srcdir)/extract-line.c 
 
 executable_cl = can-client
 
 executable_br = can-bridge
 
-executable2 = can-server2
+#executable2 = can-server2
 
 srcdir = .
 prefix = /usr/local
@@ -46,7 +48,8 @@ DEFS = -DHAVE_CONFIG_H
 CPPFLAGS = 
 sysroot = 
 
-all: can-server can-client can-bridge can-server2
+#all: can-server can-client can-bridge can-server2
+all: can-server can-client can-bridge
 
 can-server: $(sourcefiles)
 	$(CC) $(CFLAGS) $(DEFS) $(CPPFLAGS) $(LDFLAGS) -I . -I ./include -o $(executable) $(sourcefiles) $(LIBS)
@@ -57,8 +60,8 @@ can-client: $(sourcefiles_cl)
 can-bridge: $(sourcefiles_br)	
 	$(CC) $(CFLAGS) $(DEFS) $(CPPFLAGS) $(LDFLAGS) -I . -I ./include -o $(executable_br) $(sourcefiles_br) 
 
-can-server2: $(sourcefiles2)
-	$(CC) $(CFLAGS) $(DEFS) $(CPPFLAGS) $(LDFLAGS) -I . -I ./include -o $(executable2) $(sourcefiles2) $(LIBS)
+#can-server2: $(sourcefiles2)
+#	$(CC) $(CFLAGS) $(DEFS) $(CPPFLAGS) $(LDFLAGS) -I . -I ./include -o $(executable2) $(sourcefiles2) $(LIBS)
 
 clean:
 	rm -f $(executable) $(executable_cl) $(executable_br) $(executable2) *.o
