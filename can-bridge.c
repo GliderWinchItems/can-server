@@ -35,6 +35,8 @@
 #include "can-so.h"
 #include "extract-line.h"
 
+#include "can-bridge-filter.h"
+
 #define MAXLEN 4000
 //#define PORT 29536
 
@@ -52,6 +54,8 @@ struct CANALL canall_w; // Our format: 'w' = write to CAN bus
 //static int ret1;
 //static char xbuf[XBUFSZ]; // See socketcand.h for XBUFSZ
 //static char *pret; // extract_line_get() return points to line
+
+FILE* fp;
 
 int verbose_flag=0;
 
@@ -75,9 +79,9 @@ struct RAWSOCSTUF
 
 void print_usage(void)
 {
-	printf("Command line must have four arguments, e.g.--\n\
-		can-bridge <can#1> <file#1> <can#2> <file#2>\n\
-		can-bridge can0 gateway0-1.txt can1 gateway1-0.txt\n");
+	printf("Command line must have 2 arguments, e.g.--\n\
+		can-bridge --file <path/file>\n\
+		can-bridge --file CANbridge2x2.txt\n");
 	return;
 }
 
@@ -88,16 +92,35 @@ int main(int argc, char **argv)
 	fd_set readfds;
 	
 /* Command line:
-   can-bridge <can#1> <file#1> <can#2> <file#2>
-   can-bridge can0 gate0-1 can1 gate1-0
+   can-bridge -f <path/file>
 */
-	if (argc < 5)
+	if (argc < 3)
 	{
 		printf("Number of arguments err: %d\n",argc);
 		print_usage();
 		exit(1);
 	}
+	if (strcmp(argv[1],"--file") != 0)
+	{ 
+		printf("ERR cmdline: 1st arg expected is --file\n");
+		print_usage();
+		exit(1);
+	}
+	if ((fp=fopen(argv[2], "r")) == NULL)
+	{
+		printf("ERR cmdline: file %s did not open\n",argv[2]);
+		exit(1);
+	}
+	if (can_bridge_filter_init(fp) == NULL)
+	{
+		printf("ERR: bridging file %s set up failed\n",argv[2]);
+		exit(1);
+	}
 
+	strcpy(rs[0].bus_name,"can0");
+	strcpy(rs[1].bus_name,"can1");
+
+#if 0
 	if (strcmp(argv[1], "can0") || strcmp(argv[1], "can1"))
 	{
 		strncpy(rs[0].bus_name,argv[1],BUSNAMESZ);
@@ -124,15 +147,17 @@ int main(int argc, char **argv)
 		print_usage();
 		exit(1);
 	}
-	if ( (rs[0].fp = fopen(argv[2],"r")) == NULL)
+#endif
+
+	if ( (rs[0].fp = fopen("can0","r")) == NULL)
 	{
-		printf("file: %s for first CAN did not open\n",argv[2]);
+		printf("file: can0 did not open\n");
 		print_usage();
 		exit(1);
 	}
-	if ( (rs[1].fp = fopen(argv[4],"r")) == NULL)
+	if ( (rs[1].fp = fopen("can1","r")) == NULL)
 	{
-		printf("file: %s for second CAN did not open\n",argv[4]);
+		printf("file: can1 did not open\n");
 		print_usage();
 		exit(1);
 	}
