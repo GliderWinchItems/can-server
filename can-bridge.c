@@ -4,11 +4,10 @@
 * Board              : Seeed CAN hat
 * Description        : Bridge/gateway between CAN0 and CAN1
 *******************************************************************************/
-/* Command line:
-   can-bridge <can#1> <file#1> <can#2> <file#2>
-   can-bridge can0 gate0-1 can1 gate1-0
+/* 05/18/2024
+	Command line:
+   can-bridge <can#1> <file#1>
 */
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,7 +57,6 @@ struct CANALL canall_w; // Our format: 'w' = write to CAN bus
 FILE* fp;
 
 int verbose_flag=0;
-
 
 void print_usage(void);
 void sigint();
@@ -255,7 +253,6 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-
 void sigint()
 {
 	if(verbose_flag)
@@ -270,8 +267,6 @@ void sigint()
 			close(rs[i].raw_socket);
 		}
 	}
-
 	exit(0);
 }
-
 /* eof */

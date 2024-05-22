@@ -10,11 +10,10 @@
 
 #define CBFNxNMAX 5     // 5x5 max size of matrix tables
 #define CBFSORTMIN 12   // ID arrays shorter than this are not 'bsearch'd
-#define CBFARRAYMAX 128 // An ID array larger than this is suspect.
-#define CBFIDARRAYMAX 512 // An ID array larger than this is suspect.
+#define CBFARRAYMAX 512 // An ID array larger than this is suspect.
 
 /* Translation are pairs of CAN IDs*/
-struct CBFELEMENT
+struct CBF2C
 {
 	uint32_t in;  // Incoming CAN id to match upon
 	uint32_t out; // Outgoing CAN id translated; 0 = no translation
@@ -24,12 +23,11 @@ struct CBFELEMENT
    (Use an array of size N*N of these structs.) */
 struct CBFNxN
 {
-	struct CBFELEMENT* ptx; // Ptr translate table (id pairs)
-	uint32_t* pbp;          // Ptr block:pass table (single id)
-	uint16_t  size_tx; // Size of struct array; 0 = empty table
-	uint16_t  size_bp; // Size of uint32_t array; 0 = empty table
-	uint8_t   type_tx; // JIC
-	uint8_t   type_bp; // -1 = self; 0 = pass on match; 1 = block on match
+	struct CBF2C* p2c; // Ptr translate table (id pairs, 2 columns)
+	uint32_t*     p1c; // Ptr block:pass table (single id, 1 column)
+	uint16_t  size_2c; // Size of 2 column struct array; 0 = empty table
+	uint16_t  size_1c; // Size of 1 column uint32_t array; 0 = empty table
+	uint8_t      type; // -1 = self; 0 = pass on match; 1 = block on match
 };
 
 /* Starting place for tables. */
@@ -43,7 +41,7 @@ struct CBF_TABLES
 struct CBF_TABLES* can_bridge_filter_init(FILE *fp);
 /* @brief   : Read file, extract IDs, and build filter table
  * @param   : fp = file pointer to filter table
- * @return  : pointer to ready-to-use table struct
+ * @return  : pointer to base table struct; NULL = failed
  * ************************************************************************************** */
 
 
