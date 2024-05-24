@@ -37,17 +37,24 @@ static const int8_t h[256] =
  * ************************************************************************************** */
  uint32_t CANid_hex_bin(char* pc)
  {
- 	uint32_t id = 0;
+ 	uint32_t id;
  	int8_t ret;
- 	pc +=2; // Skip sequence byte; point to low ord CAN ID
- 	if ((ret=h[*(pc+0)]) < 0) return 0; id  = ret <<  4;
- 	if ((ret=h[*(pc+1)]) < 0) return 0; id |= ret <<  0;
- 	if ((ret=h[*(pc+2)]) < 0) return 0; id |= ret << 12;
- 	if ((ret=h[*(pc+3)]) < 0) return 0; id |= ret <<  8;
- 	if ((ret=h[*(pc+4)]) < 0) return 0; id |= ret << 20;
- 	if ((ret=h[*(pc+5)]) < 0) return 0; id |= ret << 16;
- 	if ((ret=h[*(pc+6)]) < 0) return 0; id |= ret << 28;
- 	if ((ret=h[*(pc+7)]) < 0) return 0; id |= ret << 24;
+ 	if ((ret=h[*(uint8_t*)(pc+0)]) < 0) return 0; 
+ 	id  = ret <<  4;
+ 	if ((ret=h[*(uint8_t*)(pc+1)]) < 0) return 0; 
+ 	id |= ret <<  0;
+ 	if ((ret=h[*(uint8_t*)(pc+2)]) < 0) return 0; 
+ 	id |= ret << 12;
+ 	if ((ret=h[*(uint8_t*)(pc+3)]) < 0) return 0; 
+ 	id |= ret <<  8;
+ 	if ((ret=h[*(uint8_t*)(pc+4)]) < 0) return 0; 
+ 	id |= ret << 20;
+ 	if ((ret=h[*(uint8_t*)(pc+5)]) < 0) return 0; 
+ 	id |= ret << 16;
+ 	if ((ret=h[*(uint8_t*)(pc+6)]) < 0) return 0; 
+ 	id |= ret << 28;
+ 	if ((ret=h[*(uint8_t*)(pc+7)]) < 0) return 0; 
+ 	id |= ret << 24;
  	return id;
  }
  /* **************************************************************************************
