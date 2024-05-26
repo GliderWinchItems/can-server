@@ -109,11 +109,15 @@ int main(int argc, char **argv)
 		printf("ERR cmdline: file %s did not open\n",argv[2]);
 		exit(1);
 	}
-	if (can_bridge_filter_init(fp) == NULL)
+	struct CBF_TABLES* ptbl;
+	if ((ptbl=can_bridge_filter_init(fp)) == NULL)
 	{
 		printf("ERR: bridging file %s set up failed\n",argv[2]);
 		exit(1);
 	}
+/* Expedient Test table */	
+#include "can-bridge-filter_test.h"		
+can_bridge_filter_test(ptbl);
 
 	strcpy(rs[0].bus_name,"can0");
 	strcpy(rs[1].bus_name,"can1");

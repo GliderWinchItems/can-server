@@ -19,6 +19,7 @@ sourcefiles_br = $(srcdir)/can-bridge.c \
 	$(srcdir)/can-bridge-filter.c \
 	$(srcdir)/can-bridge-filter-lookup.c \
 	$(srcdir)/CANid-hex-bin.c \
+	$(srcdir)/can-bridge-filter_test.c \
 
 #sourcefiles2 = $(srcdir)/can-server2.c \
 #	$(srcdir)/state_raw.c \

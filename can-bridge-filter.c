@@ -733,3 +733,48 @@ printinput('t',&pt->buf[0],tmpid); printf("\n");
 
    return pcbf_tables; // Success
 }
+/*******************************************************************************
+ * void printtablesummary(struct CBF_TABLES* pcbf);
+ * @brief   : print table summary
+ * @param   : pcbf = pointer to beginning struct for tables
+*******************************************************************************/
+const char* ptype0 = "0 Pass__on_match";
+const char* ptype1 = "1 Block_on_match";
+
+void printtablesummary(struct CBF_TABLES* pcbf)
+{
+   struct CBFNxN* pbnn = pcbf->pnxn;
+   int N = pcbf->n;
+   printf("\nSummary: matrix: %ix%i\n",N,N);
+   int r,c;
+   for (r = 0; r < N; r++)
+   {
+      for (c = 0; c < N; c++)
+      {
+ //        pbnn = pbnn1 + c;
+         printf("%i %i  %3i:size_1c %3i:size_2c  ",r+1,c+1,pbnn->size_1c,pbnn->size_2c);
+         if (pbnn->type == 0)
+            printf("%s",ptype0);
+         else
+            printf("%s",ptype1);
+         if (pbnn->p1c == NULL)
+         {
+            printf("  NULL");
+         }
+         else
+         {
+            printf("  TBLL %li",(pbnn->p1c - (uint32_t*)pcbf->pnxn));
+         }
+         if (pbnn->p2c == NULL)
+         {
+            printf(" NULL\n");
+         }
+         else
+         {
+            printf(" TBLL %li\n",(pbnn->p2c - (struct CBF2C*)pcbf->pnxn));
+         }
+         pbnn += 1;
+      }
+   }
+   return;
+}

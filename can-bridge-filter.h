@@ -43,6 +43,10 @@ struct CBF_TABLES* can_bridge_filter_init(FILE *fp);
  * @param   : fp = file pointer to filter table
  * @return  : pointer to base table struct; NULL = failed
  * ************************************************************************************** */
+void printtablesummary(struct CBF_TABLES* pcbf);
+/* @brief   : print table summary
+ * @param   : pcbf = pointer to beginning struct for tables
+*******************************************************************************/
 
 
 #endif
