@@ -14,7 +14,7 @@
 #define BUFBIGSZ (XBUFSZ+64)  // Coordinate buffering with socket read size
 static char bufbig[BUFBIGSZ]; // Stream buffer
 
-#define MAXOUTSZ 64
+#define MAXOUTSZ 1024
 #define BUFOUTSZ MAXOUTSZ
 static char bufout[BUFOUTSZ]; // Line under construction
 
