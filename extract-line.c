@@ -14,7 +14,7 @@
 #define BUFBIGSZ (XBUFSZ+64)  // Coordinate buffering with socket read size
 static char bufbig[BUFBIGSZ]; // Stream buffer
 
-#define MAXOUTSZ 1024
+#define MAXOUTSZ 64
 #define BUFOUTSZ MAXOUTSZ
 static char bufout[BUFOUTSZ]; // Line under construction
 
@@ -28,7 +28,7 @@ uint32_t ovrrunctr = 0;
 /* **************************************************************************************
  * void extract_line_add(char *pin, int n);
  * @brief	: Add chars from 'read()' to big buffer and build output line
- * @param	: piin = pointer to input chars from 'read'()' (not used if n = 0)
+ * @param	: pin = pointer to input chars from 'read'()' (not used if n = 0)
  * @param	: n = number of chars in input
   * ************************************************************************************** */
 void extract_line_add(char* pin, int n)
