@@ -5,20 +5,26 @@
 * Description        : Output buffering and output threads 
 *******************************************************************************/
 
-
+#include <stdio.h>
+#include <sys/socket.h>
 #include <semaphore.h>
 #include <sys/uio.h>
 #include <threads.h>
 #include <string.h>
+#include <pthread.h>
 #include "output.h"
 
-
+extern int server_socket;
+extern int raw_socket;
 
 struct LINEBUFF linebuff;
 struct FRAMEBUFF framebuff;
 
 pthread_t thread_lines;
 pthread_t thread_frames;
+
+void* output_thread_lines(void*);
+void* output_thread_frames(void*);
 
 /* **************************************************************************************
  * int output_init_tcp(int socket);
@@ -58,9 +64,9 @@ int output_init_tcp(int socket)
 int output_init_can(int socket)
 {
 	int ret;
-	framebuff.padd   = &framebuff.frame[0];
+	framebuff.padd   = &framebuff.fbuf[0];
 	framebuff.ptake  = framebuff.padd;
-	framebuff.pend   = &framebuff.frame[FRAMEBUFFSIZE];
+	framebuff.pend   = &framebuff.fbuf[FRAMEBUFFSIZE];
 	framebuff.socket = socket;
 
 	ret = sem_init(&framebuff.sem, 0, 0); 
@@ -88,16 +94,15 @@ int output_init_can(int socket)
 int output_add_lines(char* pc, int n)
 {
 	struct LBUFF* plb = linebuff.padd;
-	char* pb = &plb->lbuf.buf[0];
-	int i;
+	char* pb = &plb->buf[0];
 
 /* Since 'n' is limited to: 14 < n < 34	why not inline this copy with uint_32_t, or uint64_t? */
 	memcpy(pb, pc, n);
 
-	plb->len = n; // Save length so we don't have to do another str(len)
+	plb->len = n; // Save length so we don't have to do another costly str(len)
 
-	plb->padd += 1; // Step to next line buffer. Check for wraparound
-	if (plb->padd >= plb->pend) plb->padd = &linebuff.lbuf[0];
+	plb += 1; // Step to next line buffer. Check for wraparound
+	if (plb >= linebuff.pend) plb = &linebuff.lbuf[0];
 
 	sem_post(&linebuff.sem); // Increments semaphore
 	return 0;
@@ -108,43 +113,45 @@ int output_add_lines(char* pc, int n)
  * @param   : pfr = pointer to input frame
  * @return	:  0 = OK; 
  * ************************************************************************************** */
-int output_add_frames(struct FRAMEBUFF* pfr)
+int output_add_frames(struct can_frame* pfr)
 {
 	struct FRAMEBUFF* pfb = &framebuff;
 	*pfb->padd = *pfr; // Add frame to buffer
 	pfb->padd += 1;
-	if (pfb->padd >= framebuff.pend) pfb->padd = &frambuff.fbuf[0];
+	if (pfb->padd >= framebuff.pend) pfb->padd = &framebuff.fbuf[0];
 	sem_post(&framebuff.sem); // Increments semaphore
 	return 0;	
 }
 /* **************************************************************************************
- * void output_thread_lines(struct LINEBUFF* plb;);
+ * void* output_thread_lines(struct LINEBUFF* plb;);
  * @brief   : Output buffered lines to TCP socket
  * @param   : plb = pointer to struct with buffer and pointers
  * ************************************************************************************** */
-void output_thread_lines(struct LINEBUFF* plb;)
+void* output_thread_lines(void*)
 {
+	struct LINEBUFF* plb = &linebuff;
 	while(1==1)
 	{
 		sem_wait(&plb->sem); // Decrements sem
-		send(server_socket,&plb->ptake->lbuf.buf[0], plb->ptake->lbuf.len, 0);
+		send(server_socket,&plb->ptake->buf[0], plb->ptake->len, 0);
 		plb->ptake += 1;
-		if (plb->ptake >= plb->pend) plb->ptake = &linebuff.lbuf[0];
+		if (plb->ptake >= linebuff.pend) plb->ptake = &linebuff.lbuf[0];
 	}
 }
 /* **************************************************************************************
- * void output_thread_frames(struct FRAMEBUFF* plf);
+ * void* output_thread_frames(struct FRAMEBUFF* plf);
  * @brief   : Output buffered frames to CAN socket
  * @param   : plf = pointer to struct with buffer and pointers
  * ************************************************************************************** */
-void output_thread_frames(struct FRAMEBUFF* plf)
+void* output_thread_frames(void*)
 {
+	struct FRAMEBUFF* plf = &framebuff;
 	while(1==1)
 	{
 		sem_wait(&plf->sem);
 		send(raw_socket, plf->ptake, sizeof(struct can_frame), 0);
-		plf->take += 1;
-		if (plf->take >= plf->pend) plf->take = &frambuff.frame[0];
+		plf->ptake += 1;
+		if (plf->ptake >= framebuff.pend) plf->ptake = &framebuff.fbuf[0];
 	}
 
 }

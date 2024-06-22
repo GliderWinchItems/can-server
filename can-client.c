@@ -76,6 +76,7 @@ Example: can1 connects to hub-server with hub-server on port 32127
 #include "can-os.h"
 #include "can-so.h"
 #include "extract-line.h"
+#include "output.h"
 
 #define MAXLEN 4000
 #define PORT 29536
@@ -331,14 +332,14 @@ inline void state_connected()
 			if (can_so_cnvt(&canall_r,&frame) != 0)
 			{
 				sprintf(buf,"ERROR %d %08X: CAN-SO \n", ret, frame.can_id);
-				send(server_socket,buf, strlen(buf), 0);
-// output_add_lines(buf,strlen(buf));			
+//				send(server_socket,buf, strlen(buf), 0);
+ output_add_lines(buf,strlen(buf));			
 				if (verbose_flag == 1) { printf("%s",buf); }
 			}
 			else
 			{
-				send(server_socket, canall_r.caa, canall_r.caalen, 0);
-// output_add_lines(canall_r.caa, canall_r.caalen);			
+//				send(server_socket, canall_r.caa, canall_r.caalen, 0);
+ output_add_lines(canall_r.caa, canall_r.caalen);			
 			}
 		}
 	}
