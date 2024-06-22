@@ -59,6 +59,8 @@ void can_bridge_filter_test(struct CBF_TABLES* pcbf)
 		printf(" rev:%1c%1c%1c%1c%1c%1c%1c%1c\n",cmsg[8],cmsg[9],cmsg[6],cmsg[7],cmsg[4],cmsg[5],cmsg[2],cmsg[3]);
 		i += 1;
 	} 
+int rr = sizeof(struct CBFNxN);
+printf("sizeof: %i\n",rr );
 	return;
 }
 

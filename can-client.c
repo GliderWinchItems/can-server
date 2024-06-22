@@ -332,11 +332,13 @@ inline void state_connected()
 			{
 				sprintf(buf,"ERROR %d %08X: CAN-SO \n", ret, frame.can_id);
 				send(server_socket,buf, strlen(buf), 0);
+// output_add_lines(buf,strlen(buf));			
 				if (verbose_flag == 1) { printf("%s",buf); }
 			}
 			else
 			{
 				send(server_socket, canall_r.caa, canall_r.caalen, 0);
+// output_add_lines(canall_r.caa, canall_r.caalen);			
 			}
 		}
 	}
@@ -357,6 +359,7 @@ inline void state_connected()
 					if (ret1 == 0)
 					{ // Here, conversion to output frame good and ready to send
 						send(raw_socket, &frame, sizeof(struct can_frame), 0);
+// output_add_frames(&frame, sizeof(struct can_frame));					
 					}
 					else
 					{ // Here, some sort of error with the ascii line

@@ -13,7 +13,8 @@ executable = can-server
 sourcefiles_cl = $(srcdir)/can-client.c \
 	$(srcdir)/can-os.c \
 	$(srcdir)/can-so.c \
-	$(srcdir)/extract-line.c 
+	$(srcdir)/extract-line.c \
+	$(srcdir)/output.c 
 
 sourcefiles_br = $(srcdir)/can-bridge.c \
 	$(srcdir)/can-bridge-filter.c \
