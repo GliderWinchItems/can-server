@@ -78,6 +78,9 @@ Example: can1 connects to hub-server with hub-server on port 32127
 #include "extract-line.h"
 #include "output.h"
 
+/* enable output buffer/threads. */
+#define OBUF
+
 #define MAXLEN 4000
 #define PORT 29536
 
@@ -298,6 +301,10 @@ inline void state_connected()
 
 		previous_state = STATE_CONNECTED;
 	}
+#ifdef OBUF	
+	output_init_tcp(server_socket);
+	output_init_can(raw_socket);
+#endif
 
  for(;;) 
  {
@@ -332,14 +339,20 @@ inline void state_connected()
 			if (can_so_cnvt(&canall_r,&frame) != 0)
 			{
 				sprintf(buf,"ERROR %d %08X: CAN-SO \n", ret, frame.can_id);
-//				send(server_socket,buf, strlen(buf), 0);
- output_add_lines(buf,strlen(buf));			
+#ifdef OBUF				
+ output_add_lines(buf,strlen(buf));
+#else 
+				send(server_socket,buf, strlen(buf), 0);
+#endif				
 				if (verbose_flag == 1) { printf("%s",buf); }
 			}
 			else
 			{
-//				send(server_socket, canall_r.caa, canall_r.caalen, 0);
+#ifdef OBUF					
  output_add_lines(canall_r.caa, canall_r.caalen);			
+#else 
+				send(server_socket, canall_r.caa, canall_r.caalen, 0);
+#endif				
 			}
 		}
 	}
@@ -359,8 +372,11 @@ inline void state_connected()
 					ret1 = can_os_cnvt(&frame,&canall_w,pret);
 					if (ret1 == 0)
 					{ // Here, conversion to output frame good and ready to send
+#ifdef OBUF							
+	output_add_frames(&frame);
+#else	
 						send(raw_socket, &frame, sizeof(struct can_frame), 0);
-// output_add_frames(&frame, sizeof(struct can_frame));					
+#endif						
 					}
 					else
 					{ // Here, some sort of error with the ascii line
