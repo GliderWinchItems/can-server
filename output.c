@@ -127,7 +127,7 @@ int output_add_frames(struct can_frame* pfr)
  * @brief   : Output buffered lines to TCP socket
  * @param   : plb = pointer to struct with buffer and pointers
  * ************************************************************************************** */
-void* output_thread_lines(void*)
+void* output_thread_lines(void* p)
 {
 	struct LINEBUFF* plb = &linebuff;
 	while(1==1)
@@ -143,7 +143,7 @@ void* output_thread_lines(void*)
  * @brief   : Output buffered frames to CAN socket
  * @param   : plf = pointer to struct with buffer and pointers
  * ************************************************************************************** */
-void* output_thread_frames(void*)
+void* output_thread_frames(void* p)
 {
 	struct FRAMEBUFF* plf = &framebuff;
 	while(1==1)
