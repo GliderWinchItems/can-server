@@ -78,8 +78,8 @@ Example: can1 connects to hub-server with hub-server on port 32127
 #include "extract-line.h"
 #include "output.h"
 
-/* enable output buffer/threads. */
-#define OBUF
+/* enable output buffering w output threads. */
+//#define OBUF
 
 #define MAXLEN 4000
 #define PORT 29536
