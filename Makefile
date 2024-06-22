@@ -34,6 +34,7 @@ executable_br = can-bridge
 
 #executable2 = can-server2
 
+
 srcdir = .
 prefix = /usr/local
 exec_prefix = ${prefix}
@@ -46,7 +47,7 @@ LIBS = -lpthread
 init_script = yes
 rc_script = no
 CC = gcc
-LDFLAGS = 
+LDFLAGS = -pthread
 DEFS = -DHAVE_CONFIG_H
 CPPFLAGS = 
 sysroot = 
