@@ -81,7 +81,7 @@ Example: can1 connects to hub-server with hub-server on port 32127
 /* enable output buffering w output threads. */
 #define OBUF
 
-#define MAXLEN 4000
+#define MAXLEN 8192 //4000
 #define PORT 29536
 
 #define STATE_INIT 0
@@ -92,7 +92,7 @@ Example: can1 connects to hub-server with hub-server on port 32127
 #define PRINT_ERROR(...) fprintf(stderr, __VA_ARGS__);
 #define PRINT_VERBOSE(...) printf(__VA_ARGS__);
 
-#define XBUFSZ 128 // Number chars to read from RAW socket read
+#define XBUFSZ 4096 // 128 // Number chars to read from RAW socket read
 struct CANALL canall_r; // Our format: 'r' = read from CAN bus
 struct CANALL canall_w; // Our format: 'w' = write to CAN bus
 static int ret1;
