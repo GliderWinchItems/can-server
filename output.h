@@ -13,8 +13,8 @@
 #include <semaphore.h>
 #include "include/linux/can.h"
 
-#define LINEBUFFSIZE 320 // Lines for 2048 flash block, plus some
-#define LBUFSZ 34 // Length of longest ascii/hex CAN msg+1
+#define LINEBUFFSIZE 512 // Lines for 2048 flash block, plus some
+#define LBUFSZ 36 // Length of longest ascii/hex CAN msg+1
 
 struct LBUFF
 {
