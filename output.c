@@ -102,7 +102,7 @@ int output_add_lines(char* pc, int n)
 	plb->len = n; // Save length so we don't have to do another costly str(len)
 
 	plb += 1; // Step to next line buffer. Check for wraparound
-	if (plb >= linebuff.pend) plb = &linebuff.lbuf[0];
+	if (plb >= linebuff.pend) linebuff.padd = &linebuff.lbuf[0];
 
 	sem_post(&linebuff.sem); // Increments semaphore
 	return 0;
@@ -118,7 +118,7 @@ int output_add_frames(struct can_frame* pfr)
 	struct FRAMEBUFF* pfb = &framebuff;
 	*pfb->padd = *pfr; // Add frame to buffer
 	pfb->padd += 1;
-	if (pfb->padd >= framebuff.pend) pfb->padd = &framebuff.fbuf[0];
+	if (pfb->padd >= framebuff.pend) framebuff.padd = &framebuff.fbuf[0];
 	sem_post(&framebuff.sem); // Increments semaphore
 	return 0;	
 }
@@ -135,7 +135,7 @@ void* output_thread_lines(void* p)
 		sem_wait(&plb->sem); // Decrements sem
 		send(server_socket,&plb->ptake->buf[0], plb->ptake->len, 0);
 		plb->ptake += 1;
-		if (plb->ptake >= linebuff.pend) plb->ptake = &linebuff.lbuf[0];
+		if (plb->ptake >= linebuff.pend) linebuff.ptake = &linebuff.lbuf[0];
 	}
 }
 /* **************************************************************************************
@@ -151,7 +151,7 @@ void* output_thread_frames(void* p)
 		sem_wait(&plf->sem);
 		send(raw_socket, plf->ptake, sizeof(struct can_frame), 0);
 		plf->ptake += 1;
-		if (plf->ptake >= framebuff.pend) plf->ptake = &framebuff.fbuf[0];
+		if (plf->ptake >= framebuff.pend) framebuff.ptake = &framebuff.fbuf[0];
 	}
 
 }
