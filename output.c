@@ -99,15 +99,15 @@ int output_add_lines(char* pc, int n)
 
 /* Since 'n' is limited to: 14 < n < 34	why not inline this copy with uint_32_t, or uint64_t? */
 	memcpy(pb, pc, n);
-*(pb+1)=0;	
-printf("%d %s | %s\n",n,pc,pb);
+*(pb+n)=0;	
+printf("%d %s\n",n,pb);
 
 	plb->len = n; // Save length so we don't have to do another costly str(len)
 
 	plb += 1; // Step to next line buffer. Check for wraparound
 	if (plb >= linebuff.pend) linebuff.padd = &linebuff.lbuf[0];
 
-//	sem_post(&linebuff.sem); // Increments semaphore
+	sem_post(&linebuff.sem); // Increments semaphore
 	return 0;
 }
 /* **************************************************************************************
@@ -138,6 +138,10 @@ void* output_thread_lines(void* p)
 		sem_wait(&plb->sem); // Decrements sem
 		while (plb->ptake != plb->padd)
 		{
+char a[64];
+memcpy(a,plb->ptake->buf,plb->ptake->len);
+a[plb->ptake->len]=0;
+printf("T %s\n",a);			
 //			send(server_socket,&plb->ptake->buf[0], plb->ptake->len, 0);
 			plb->ptake += 1;
 			if (plb->ptake >= plb->pend) plb->ptake = &linebuff.lbuf[0];
