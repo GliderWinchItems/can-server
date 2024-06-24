@@ -93,6 +93,10 @@ int output_init_can(int socket)
  * ************************************************************************************** */
 int output_add_lines(char* pc, int n)
 {
+
+send(server_socket,pc, n, 0);
+return 0;
+
 	struct LBUFF* plb = linebuff.padd;
 	char* pb = &plb->buf[0];
 
