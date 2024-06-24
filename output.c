@@ -104,7 +104,13 @@ int output_add_lines(char* pc, int n)
 	plb += 1; // Step to next line buffer. Check for wraparound
 	if (plb >= linebuff.pend) linebuff.padd = &linebuff.lbuf[0];
 
-	sem_post(&linebuff.sem); // Increments semaphore
+//	sem_post(&linebuff.sem); // Increments semaphore
+	while (linebuff.ptake != linebuff.padd)
+	{
+		send(server_socket,&linebuff.ptake->buf[0], linebuff.ptake->len, 0);
+		linebuff.ptake += 1;
+		if (linebuff.ptake >= linebuff.pend) linebuff.ptake = &linebuff.lbuf[0];
+	}	
 	return 0;
 }
 /* **************************************************************************************
@@ -133,13 +139,14 @@ void* output_thread_lines(void* p)
 	while(1==1)
 	{
 		sem_wait(&plb->sem); // Decrements sem
-
+#if 0
 		while (plb->ptake != plb->padd)
 		{
 			send(server_socket,&plb->ptake->buf[0], plb->ptake->len, 0);
 			plb->ptake += 1;
 			if (plb->ptake >= plb->pend) plb->ptake = &linebuff.lbuf[0];
 		}
+#endif		
 	}
 }
 /* **************************************************************************************
