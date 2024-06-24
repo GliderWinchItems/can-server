@@ -47,7 +47,7 @@ int output_init_tcp(int socket)
 		return -1;
 	}
 
-    linebuff.tret = pthread_create( &thread_lines, NULL, output_thread_lines, (struct LINEBUFF*)&linebuff);
+    linebuff.tret = pthread_create( &thread_lines, NULL, output_thread_lines, NULL);
     if(linebuff.tret)
      {
          fprintf(stderr,"Error - pthread_create() thread_lines return code: %d\n",linebuff.tret);
@@ -75,7 +75,7 @@ int output_init_can(int socket)
 		printf("output_init: semaphore init fail\n");
 		return -1;
 	}
-    framebuff.tret = pthread_create( &thread_frames, NULL, output_thread_frames, (struct FRAMEBUFF*)&framebuff);
+    framebuff.tret = pthread_create( &thread_frames, NULL, output_thread_frames, NULL);
     if(framebuff.tret)
      {
          fprintf(stderr,"Error - pthread_create() thread-frames return code: %d\n",framebuff.tret);
