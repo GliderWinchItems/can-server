@@ -104,10 +104,13 @@ printf("%d %s\n",n,pb);
 
 	plb->len = n; // Save length so we don't have to do another costly str(len)
 
+send(server_socket,&plb->buf[0], plb->len, 0);
+
 	plb += 1; // Step to next line buffer. Check for wraparound
 	if (plb >= linebuff.pend) linebuff.padd = &linebuff.lbuf[0];
 
 	sem_post(&linebuff.sem); // Increments semaphore
+
 	return 0;
 }
 /* **************************************************************************************
@@ -136,6 +139,7 @@ void* output_thread_lines(void* p)
 	while(1==1)
 	{
 		sem_wait(&plb->sem); // Decrements sem
+printf("S %d\n",plb->sem);
 		while (plb->ptake != plb->padd)
 		{
 char a[64];
