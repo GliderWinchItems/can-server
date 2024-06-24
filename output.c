@@ -133,9 +133,13 @@ void* output_thread_lines(void* p)
 	while(1==1)
 	{
 		sem_wait(&plb->sem); // Decrements sem
-		send(server_socket,&plb->ptake->buf[0], plb->ptake->len, 0);
-		plb->ptake += 1;
-		if (plb->ptake >= linebuff.pend) linebuff.ptake = &linebuff.lbuf[0];
+
+		while (plb->ptake != plb->padd)
+		{
+			send(server_socket,&plb->ptake->buf[0], plb->ptake->len, 0);
+			plb->ptake += 1;
+			if (plb->ptake >= plb->pend) plb->ptake = &linebuff.lbuf[0];
+		}
 	}
 }
 /* **************************************************************************************
