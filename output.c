@@ -100,7 +100,7 @@ int output_add_lines(char* pc, int n)
 /* Since 'n' is limited to: 14 < n < 34	why not inline this copy with uint_32_t, or uint64_t? */
 	memcpy(pb, pc, n);
 *(pb+1)=0;	
-printf("%s",pb);
+printf("%d %s;\n",n,pb);
 
 	plb->len = n; // Save length so we don't have to do another costly str(len)
 
