@@ -1,7 +1,7 @@
-#
+# update can-client
 make
 sudo killall can-client
-sleep(1)
+sleep 1
 sudo cp can-client /usr/local/bin
 ls -lt /usr/local/bin
 sudo shutdown -r now
