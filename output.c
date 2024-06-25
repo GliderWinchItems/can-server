@@ -12,6 +12,7 @@
 #include <threads.h>
 #include <string.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "output.h"
 
 extern int server_socket;
@@ -139,6 +140,7 @@ int a = 0;
 int b = 0;
 printf("\nOUTPUT_THREAD_LINES: start\n");	
 	struct LINEBUFF* plb = &linebuff;
+	usleep(100);
 	while(1==1)
 	{
 		sem_wait(&plb->sem); // Decrements sem
@@ -151,6 +153,7 @@ printf("T %d\n",a++);
 			plb->ptake += 1;
 			if (plb->ptake >= plb->pend) plb->ptake = &linebuff.lbuf[0];
 		}
+		usleep(100);
 	}
 }
 /* **************************************************************************************
@@ -168,5 +171,6 @@ void* output_thread_frames(void* p)
 		plf->ptake += 1;
 		if (plf->ptake >= framebuff.pend) framebuff.ptake = &framebuff.fbuf[0];
 	}
+	usleep(100);
 
 }
