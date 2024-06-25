@@ -158,13 +158,13 @@ usleep(100);
  * ************************************************************************************** */
 void* output_thread_frames(void* p)
 {
-	struct FRAMEBUFF* plf = &framebuff;
+	printf("\nOUTPUT_THREAD_FRAMES: start\n");	
 	while(1==1)
 	{
-		sem_wait(&plf->sem);
-		send(raw_socket, plf->ptake, sizeof(struct can_frame), 0);
-		plf->ptake += 1;
-		if (plf->ptake >= framebuff.pend) framebuff.ptake = &framebuff.fbuf[0];
+		sem_wait(&framebuff.sem);
+		send(raw_socket, framebuff.ptake, sizeof(struct can_frame), 0);
+		framebuff.ptake += 1;
+		if (framebuff.ptake >= framebuff.pend) framebuff.ptake = &framebuff.fbuf[0];
 	}
 	usleep(100);
 
