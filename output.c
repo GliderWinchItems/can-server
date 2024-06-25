@@ -151,7 +151,7 @@ printf("T %d\n",a++);
 			linebuff.ptake += 1;
 			if (linebuff.ptake >= linebuff.pend) linebuff.ptake = &linebuff.lbuf[0];
 		}
-		usleep(500000);
+usleep(100);
 	}
 }
 /* **************************************************************************************
