@@ -174,6 +174,6 @@ void* output_thread_frames(void* p)
 		send(raw_socket, framebuff.ptake, sizeof(struct can_frame), 0);
 		framebuff.ptake += 1;
 		if (framebuff.ptake >= framebuff.pend) framebuff.ptake = &framebuff.fbuf[0];
-//		usleep(280);
+		usleep(280);
 	}
 }
