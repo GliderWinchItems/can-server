@@ -92,9 +92,10 @@ int output_init_can(int socket)
  * @param   : n = number of chars to transfer (n = 15 - 33)
  * @return	:  0 = OK; 
  * ************************************************************************************** */
+static int bbb = 0;
 int output_add_lines(char* pc, int n)
 {
-int b = 0;
+
 	struct LBUFF* plb = linebuff.padd;
 	char* pb = &plb->buf[0];
 
@@ -108,7 +109,7 @@ int b = 0;
 	plb += 1; // Step to next line buffer. Check for wraparound
 	if (plb >= linebuff.pend) linebuff.padd = &linebuff.lbuf[0];
 
-printf("A %d %lu %lu\n",b++, (unsigned long)linebuff.ptake, (unsigned long)linebuff.padd);
+printf("A %d %lu %lu\n",bbb++, (unsigned long)linebuff.ptake, (unsigned long)linebuff.padd);
 
 	sem_post(&linebuff.sem); // Increments semaphore
 
