@@ -95,19 +95,15 @@ int output_init_can(int socket)
 static int bbb = 0;
 int output_add_lines(char* pc, int n)
 {
-
-	struct LBUFF* plb = linebuff.padd;
-	char* pb = &plb->buf[0];
-
 /* Since 'n' is limited to: 14 < n < 34	why not inline this copy with uint_32_t, or uint64_t? */
-	memcpy(pb, pc, n);
+	memcpy(&linebuff.padd->buf[0], pc, n);
 
-	plb->len = n; // Save length so we don't have to do another costly str(len)
+	linebuff.padd->len = n; // Save length so we don't have to do another costly str(len)
 
 //send(server_socket,&plb->buf[0], plb->len, 0);
 
-	plb += 1; // Step to next line buffer. Check for wraparound
-	if (plb >= linebuff.pend) linebuff.padd = &linebuff.lbuf[0];
+	linebuff.padd += 1; // Step to next line buffer. Check for wraparound
+	if (linebuff.padd >= linebuff.pend) linebuff.padd = &linebuff.lbuf[0];
 
 printf("D %d %u\n",bbb++,(int)(linebuff.padd - linebuff.ptake));	
 
@@ -142,19 +138,18 @@ void* output_thread_lines(void* p)
 int a = 0;	
 int b = 0;
 printf("\nOUTPUT_THREAD_LINES: start\n");	
-	struct LINEBUFF* plb = &linebuff;
 	usleep(500);
 	while(1==1)
 	{
-		sem_wait(&plb->sem); // Decrements sem
+		sem_wait(&linebuff.sem); // Decrements sem
 printf("S %d %lu %lu\n",b++, *(unsigned long*)linebuff.ptake, *(unsigned long*)linebuff.padd);
-		while (plb->ptake != plb->padd)
+		while (linebuff.ptake != linebuff.padd)
 		{
 
 printf("T %d\n",a++);			
-			send(server_socket,&plb->ptake->buf[0], plb->ptake->len, 0);
-			plb->ptake += 1;
-			if (plb->ptake >= plb->pend) plb->ptake = &linebuff.lbuf[0];
+			send(server_socket,&linebuff.ptake->buf[0], linebuff.ptake->len, 0);
+			linebuff.ptake += 1;
+			if (linebuff.ptake >= linebuff.pend) linebuff.ptake = &linebuff.lbuf[0];
 		}
 		usleep(500000);
 	}
