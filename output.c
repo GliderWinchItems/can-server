@@ -144,9 +144,6 @@ int output_add_frames(struct can_frame* pfr)
  * ************************************************************************************** */
 void* output_thread_lines(void* p)
 {
-//int a = 0;	
-printf("\nOUTPUT_THREAD_LINES: start\n");	
-
 	while(1==1)
 	{
 		sem_wait(&linebuff.sem); // Decrements sem
@@ -155,8 +152,6 @@ printf("\nOUTPUT_THREAD_LINES: start\n");
 			send(server_socket,&linebuff.ptake->buf[0], linebuff.ptake->len, 0);
 			linebuff.ptake += 1;
 			if (linebuff.ptake >= linebuff.pend) linebuff.ptake = &linebuff.lbuf[0];
-//printf("T %d\n",a++);			
-//usleep(100);
 		}
 	}
 }
@@ -167,18 +162,13 @@ printf("\nOUTPUT_THREAD_LINES: start\n");
  * ************************************************************************************** */
 void* output_thread_frames(void* p)
 {
-	int ret;
-	printf("\nOUTPUT_THREAD_FRAMES: start\n");	
 	while(1==1)
 	{
 		sem_wait(&framebuff.sem);
-		do
-		{
-			ret = send(raw_socket, framebuff.ptake, sizeof(struct can_frame), 0);
-		} while (ret == 0);
-		
+		send(raw_socket, framebuff.ptake, sizeof(struct can_frame), 0);
+
 		framebuff.ptake += 1;
 		if (framebuff.ptake >= framebuff.pend) framebuff.ptake = &framebuff.fbuf[0];
-//		usleep(280);
+		usleep(280);
 	}
 }
