@@ -93,7 +93,7 @@ int output_init_can(int socket)
  * ************************************************************************************** */
 int output_add_lines(char* pc, int n)
 {
-
+int b = 0;
 	struct LBUFF* plb = linebuff.padd;
 	char* pb = &plb->buf[0];
 
@@ -106,6 +106,8 @@ int output_add_lines(char* pc, int n)
 
 	plb += 1; // Step to next line buffer. Check for wraparound
 	if (plb >= linebuff.pend) linebuff.padd = &linebuff.lbuf[0];
+
+printf("A %d %lu %lu\n",b, (unsigned long)linebuff.ptake, (unsigned long)linebuff.padd);
 
 	sem_post(&linebuff.sem); // Increments semaphore
 
@@ -133,13 +135,14 @@ int output_add_frames(struct can_frame* pfr)
  * ************************************************************************************** */
 void* output_thread_lines(void* p)
 {
-int a;	
+int a = 0;	
+int b = 0;
 printf("\nOUTPUT_THREAD_LINES: start\n");	
 	struct LINEBUFF* plb = &linebuff;
 	while(1==1)
 	{
 		sem_wait(&plb->sem); // Decrements sem
-printf("S %lu %lu\n",(unsigned long)linebuff.ptake, (unsigned long)linebuff.padd);
+printf("S %d %lu %lu\n",b, (unsigned long)linebuff.ptake, (unsigned long)linebuff.padd);
 		while (plb->ptake != plb->padd)
 		{
 
