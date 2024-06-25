@@ -140,7 +140,7 @@ int a = 0;
 int b = 0;
 printf("\nOUTPUT_THREAD_LINES: start\n");	
 	struct LINEBUFF* plb = &linebuff;
-	usleep(100);
+	usleep(500);
 	while(1==1)
 	{
 		sem_wait(&plb->sem); // Decrements sem
@@ -153,7 +153,7 @@ printf("T %d\n",a++);
 			plb->ptake += 1;
 			if (plb->ptake >= plb->pend) plb->ptake = &linebuff.lbuf[0];
 		}
-		usleep(100);
+		usleep(500000);
 	}
 }
 /* **************************************************************************************
