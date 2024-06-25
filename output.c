@@ -107,7 +107,7 @@ int b = 0;
 	plb += 1; // Step to next line buffer. Check for wraparound
 	if (plb >= linebuff.pend) linebuff.padd = &linebuff.lbuf[0];
 
-printf("A %d %lu %lu\n",b, (unsigned long)linebuff.ptake, (unsigned long)linebuff.padd);
+printf("A %d %lu %lu\n",b++, (unsigned long)linebuff.ptake, (unsigned long)linebuff.padd);
 
 	sem_post(&linebuff.sem); // Increments semaphore
 
@@ -142,7 +142,7 @@ printf("\nOUTPUT_THREAD_LINES: start\n");
 	while(1==1)
 	{
 		sem_wait(&plb->sem); // Decrements sem
-printf("S %d %lu %lu\n",b, (unsigned long)linebuff.ptake, (unsigned long)linebuff.padd);
+printf("S %d %lu %lu\n",b++, (unsigned long)linebuff.ptake, (unsigned long)linebuff.padd);
 		while (plb->ptake != plb->padd)
 		{
 
