@@ -109,7 +109,9 @@ int output_add_lines(char* pc, int n)
 	plb += 1; // Step to next line buffer. Check for wraparound
 	if (plb >= linebuff.pend) linebuff.padd = &linebuff.lbuf[0];
 
-printf("A %d %lu %lu\n",bbb++, *(unsigned long*)linebuff.ptake, *(unsigned long*)linebuff.padd);
+printf("D %d %u\n",bbb++,(int)(linebuff.padd - linebuff.ptake));	
+
+//printf("A %d %lu %lu\n",bbb++, *(unsigned long*)linebuff.ptake, *(unsigned long*)linebuff.padd);
 
 	sem_post(&linebuff.sem); // Increments semaphore
 
