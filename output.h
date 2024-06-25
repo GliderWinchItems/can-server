@@ -32,7 +32,7 @@ struct LINEBUFF
 	int socket;
 };
 
-#define FRAMEBUFFSIZE 320
+#define FRAMEBUFFSIZE 512
 struct FRAMEBUFF
 {
 	struct can_frame fbuf[FRAMEBUFFSIZE];

@@ -92,7 +92,8 @@ int output_init_can(int socket)
  * @param   : n = number of chars to transfer (n = 15 - 33)
  * @return	:  0 = OK; 
  * ************************************************************************************** */
-static int bbb = 0;
+static unsigned int CANtoTCPmax;
+//static int bbb = 0;
 int output_add_lines(char* pc, int n)
 {
 /* Since 'n' is limited to: 14 < n < 34	why not inline this copy with uint_32_t, or uint64_t? */
@@ -100,16 +101,17 @@ int output_add_lines(char* pc, int n)
 
 	linebuff.padd->len = n; // Save length so we don't have to do another costly str(len)
 
-//send(server_socket,&plb->buf[0], plb->len, 0);
-
 	linebuff.padd += 1; // Step to next line buffer. Check for wraparound
 	if (linebuff.padd >= linebuff.pend) linebuff.padd = &linebuff.lbuf[0];
 
-printf("D %d %u\n",bbb++,(int)(linebuff.padd - linebuff.ptake));	
-
+//printf("D %d %u\n",bbb++,(int)(linebuff.padd - linebuff.ptake));	
 //printf("A %d %lu %lu\n",bbb++, *(unsigned long*)linebuff.ptake, *(unsigned long*)linebuff.padd);
 
 	sem_post(&linebuff.sem); // Increments semaphore
+
+	int tmp = (int)(linebuff.padd - linebuff.ptake);
+	if (tmp < 0) tmp += LINEBUFFSIZE;
+	if (tmp > CANtoTCPmax) CANtoTCPmax = tmp;
 
 	return 0;
 }
@@ -119,6 +121,7 @@ printf("D %d %u\n",bbb++,(int)(linebuff.padd - linebuff.ptake));
  * @param   : pfr = pointer to input frame
  * @return	:  0 = OK; 
  * ************************************************************************************** */
+static unsigned int TCPtoCANmax;
 int output_add_frames(struct can_frame* pfr)
 {
 	struct FRAMEBUFF* pfb = &framebuff;
@@ -126,6 +129,12 @@ int output_add_frames(struct can_frame* pfr)
 	pfb->padd += 1;
 	if (pfb->padd >= framebuff.pend) framebuff.padd = &framebuff.fbuf[0];
 	sem_post(&framebuff.sem); // Increments semaphore
+
+	/* Find max depth of buffering. */
+	int tmp = (int)(framebuff.padd - framebuff.ptake);
+	if (tmp < 0) tmp += FRAMEBUFFSIZE;
+	if (tmp > TCPtoCANmax) TCPtoCANmax = tmp;
+
 	return 0;	
 }
 /* **************************************************************************************
@@ -165,7 +174,6 @@ void* output_thread_frames(void* p)
 		send(raw_socket, framebuff.ptake, sizeof(struct can_frame), 0);
 		framebuff.ptake += 1;
 		if (framebuff.ptake >= framebuff.pend) framebuff.ptake = &framebuff.fbuf[0];
-		usleep(280);
+//		usleep(280);
 	}
-
 }
