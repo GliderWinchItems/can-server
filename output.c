@@ -172,3 +172,33 @@ void* output_thread_frames(void* p)
 		usleep(280);
 	}
 }
+
+
+pthread_t thread_buffmonitor;
+/* **************************************************************************************
+ * int output_buffmonitor(void);
+ * @brief   : Output Max buffer depths periodically
+ * ************************************************************************************** */
+void* output_thread_buffmonitor(void* p)
+{
+	while(1==1)
+	{
+		sleep(60);
+		printf("CAN->TCP: %d  TCP->CAN %d\n",CANtoTCPmax,TCPtoCANmax);
+	}
+}
+/* **************************************************************************************
+ * int output_init_buffmonitor(void);
+ * @brief   : Setup a thread to periodically output buffer depth.
+ * @return	:  0 = OK; 
+ * ************************************************************************************** */
+int output_init_buffmonitor(void)
+{
+	int ret = pthread_create( &thread_buffmonitor, NULL, output_thread_buffmonitor, NULL);
+    if(ret)
+     {
+         fprintf(stderr,"Error - pthread_create() thread_buffmonitor return code: %d\n",ret);
+         exit(EXIT_FAILURE);
+     }
+     return 0;
+}

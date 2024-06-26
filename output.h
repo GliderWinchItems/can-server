@@ -66,6 +66,10 @@ struct FRAMEBUFF
  * @param   : pfr = pointer to input frame
  * @return	:  0 = OK; 
  * ************************************************************************************** */
+ int output_init_buffmonitor(void);
+/* @brief   : Setup a thread to periodically output buffer depth.
+ * @return	:  0 = OK; 
+ * ************************************************************************************** */
 
 
 #endif
