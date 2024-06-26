@@ -27,6 +27,8 @@ pthread_t thread_frames;
 void* output_thread_lines(void*);
 void* output_thread_frames(void*);
 
+static uint8_t buffmonitor_reset;
+
 /* **************************************************************************************
  * int output_init_tcp(int socket);
  * @brief   : Initialize output threads and semaphores
@@ -92,8 +94,9 @@ int output_init_can(int socket)
  * @param   : n = number of chars to transfer (n = 15 - 33)
  * @return	:  0 = OK; 
  * ************************************************************************************** */
-static unsigned int CANtoTCPmax;
-//static int bbb = 0;
+static unsigned int CANtoTCPmax; // Depth of buffer monitoring
+static unsigned int TCPtoCANmax; // Depth of buffer monitoring
+
 int output_add_lines(char* pc, int n)
 {
 /* Since 'n' is limited to: 14 < n < 34	why not inline this copy with uint_32_t, or uint64_t? */
@@ -104,11 +107,15 @@ int output_add_lines(char* pc, int n)
 	linebuff.padd += 1; // Step to next line buffer. Check for wraparound
 	if (linebuff.padd >= linebuff.pend) linebuff.padd = &linebuff.lbuf[0];
 
-//printf("D %d %u\n",bbb++,(int)(linebuff.padd - linebuff.ptake));	
-//printf("A %d %lu %lu\n",bbb++, *(unsigned long*)linebuff.ptake, *(unsigned long*)linebuff.padd);
-
 	sem_post(&linebuff.sem); // Increments semaphore
 
+	/* Depth of buffering monitoring. */
+	if (buffmonitor_reset != 0)
+	{ // Here, output printf thread printed
+		buffmonitor_reset = 0;
+		CANtoTCPmax = 0;
+		TCPtoCANmax  = 0;
+	}
 	int tmp = (int)(linebuff.padd - linebuff.ptake);
 	if (tmp < 0) tmp += LINEBUFFSIZE;
 	if (tmp > CANtoTCPmax) CANtoTCPmax = tmp;
@@ -121,7 +128,7 @@ int output_add_lines(char* pc, int n)
  * @param   : pfr = pointer to input frame
  * @return	:  0 = OK; 
  * ************************************************************************************** */
-static unsigned int TCPtoCANmax;
+
 int output_add_frames(struct can_frame* pfr)
 {
 	struct FRAMEBUFF* pfb = &framebuff;
@@ -130,7 +137,13 @@ int output_add_frames(struct can_frame* pfr)
 	if (pfb->padd >= framebuff.pend) framebuff.padd = &framebuff.fbuf[0];
 	sem_post(&framebuff.sem); // Increments semaphore
 
-	/* Find max depth of buffering. */
+	/* Depth of buffering monitoring. */
+	if (buffmonitor_reset != 0)
+	{ // Here, output printf thread printed
+		buffmonitor_reset = 0;
+		CANtoTCPmax = 0;
+		TCPtoCANmax  = 0;
+	}
 	int tmp = (int)(framebuff.padd - framebuff.ptake);
 	if (tmp < 0) tmp += FRAMEBUFFSIZE;
 	if (tmp > TCPtoCANmax) TCPtoCANmax = tmp;
@@ -173,18 +186,19 @@ void* output_thread_frames(void* p)
 	}
 }
 
-
 pthread_t thread_buffmonitor;
 /* **************************************************************************************
  * int output_buffmonitor(void);
  * @brief   : Output Max buffer depths periodically
  * ************************************************************************************** */
+static uint32_t buffctr;
 void* output_thread_buffmonitor(void* p)
 {
 	while(1==1)
 	{
 		sleep(60);
-		printf("CAN->TCP: %d  TCP->CAN %d\n",CANtoTCPmax,TCPtoCANmax);
+		printf("%3d CAN->TCP: %d  TCP->CAN %d\n",buffctr++,CANtoTCPmax,TCPtoCANmax);
+		buffmonitor_reset = 1;
 	}
 }
 /* **************************************************************************************
