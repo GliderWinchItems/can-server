@@ -304,7 +304,6 @@ inline void state_connected()
 #ifdef OBUF	
 	output_init_tcp(server_socket);
 	output_init_can(raw_socket);
-	output_init_buffmonitor();
 #endif
 
  for(;;) 
