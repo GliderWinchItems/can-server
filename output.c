@@ -192,7 +192,7 @@ else
 
 		framebuff.ptake += 1;
 		if (framebuff.ptake >= framebuff.pend) framebuff.ptake = &framebuff.fbuf[0];
-		usleep(280);
+//		usleep(280);
 	}
 }
 
