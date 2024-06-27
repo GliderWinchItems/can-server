@@ -186,7 +186,9 @@ int ret;
 	while(1==1)
 	{
 		sem_wait(&framebuff.sem);
-		ret = send(raw_socket, framebuff.ptake, sizeof(struct can_frame), 0);
+		do
+		{
+			ret = send(raw_socket, framebuff.ptake, sizeof(struct can_frame), 0);
 if (ret == 0) 
 	frame_ct0 += 1;
 else
@@ -194,9 +196,13 @@ else
 if (ret == sizeof(struct can_frame))
 	frame_eq += 1;
 
-		framebuff.ptake += 1;
-		if (framebuff.ptake >= framebuff.pend) framebuff.ptake = &framebuff.fbuf[0];
-//		usleep(280);
+			usleep(10);
+		} while(ret != sizeof(struct can_frame));
+
+
+			framebuff.ptake += 1;
+			if (framebuff.ptake >= framebuff.pend) framebuff.ptake = &framebuff.fbuf[0];
+	//		usleep(280);
 	}
 }
 
