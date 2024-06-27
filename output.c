@@ -28,8 +28,6 @@ pthread_t thread_frames;
 void* output_thread_lines(void*);
 void* output_thread_frames(void*);
 
-static uint8_t buffmonitor_reset;
-
 /* **************************************************************************************
  * int output_init_tcp(int socket);
  * @brief   : Initialize output threads and semaphores
