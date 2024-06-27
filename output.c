@@ -100,6 +100,8 @@ static unsigned int frame_ct0;
 static unsigned int frame_ct1;
 static unsigned int frame_ct0_prev;
 static unsigned int frame_ct1_prev;
+static unsigned int frame_eq;
+static unsigned int frame_eq_prev;
 
 
 int output_add_lines(char* pc, int n)
@@ -189,6 +191,8 @@ if (ret == 0)
 	frame_ct0 += 1;
 else
 	frame_ct1 += 1;
+if (ret == sizeof(struct can_frame))
+	frame_eq += 1;
 
 		framebuff.ptake += 1;
 		if (framebuff.ptake >= framebuff.pend) framebuff.ptake = &framebuff.fbuf[0];
@@ -208,9 +212,10 @@ void* output_thread_buffmonitor(void* p)
 	{
 		sleep(60);
 		printf("%3d CAN->TCP: %d  TCP->CAN %d",buffctr++,CANtoTCPmax,TCPtoCANmax);
-		printf(" frame_ct0 %d frame_ct1 %d\n",frame_ct0 - frame_ct0_prev, frame_ct1 - frame_ct1_prev);
+		printf(" frame_ct0 %d frame_ct1 %d frame_eq %d\n",frame_ct0 - frame_ct0_prev, frame_ct1 - frame_ct1_prev, frame_eq - frame_eq_prev);
 		frame_ct0_prev = frame_ct0;
 		frame_ct1_prev = frame_ct1;
+		frame_eq_prev =  frame_eq;
 		buffmonitor_reset = 1;
 	}
 }
