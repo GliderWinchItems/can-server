@@ -102,6 +102,9 @@ static unsigned int frame_ct0_prev;
 static unsigned int frame_ct1_prev;
 static unsigned int frame_eq;
 static unsigned int frame_eq_prev;
+static unsigned int frm_ret[64];
+static int idxret;
+
 
 
 int output_add_lines(char* pc, int n)
@@ -196,6 +199,14 @@ else
 if (ret == sizeof(struct can_frame))
 	frame_eq += 1;
 
+if (ret != sizeof(struct can_frame))
+{
+	if (idxret < 64)
+	{
+		frm_ret[idxret] = ret;
+		idxret += 1;
+	}
+}
 			usleep(10);
 		} while(ret != sizeof(struct can_frame));
 
@@ -222,6 +233,14 @@ void* output_thread_buffmonitor(void* p)
 		frame_ct0_prev = frame_ct0;
 		frame_ct1_prev = frame_ct1;
 		frame_eq_prev =  frame_eq;
+		for (int i = 0; i < idxret; i++)
+		{
+			printf("%3d ",frm_ret[i]);
+			if (i == 31) printf("\n");
+			frm_ret[i] = 0;
+		}
+		printf("\n");
+		idxret = 0;
 		buffmonitor_reset = 1;
 	}
 }
