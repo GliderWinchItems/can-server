@@ -96,6 +96,8 @@ int output_init_can(int socket)
  * ************************************************************************************** */
 static unsigned int CANtoTCPmax; // Depth of buffer monitoring
 static unsigned int TCPtoCANmax; // Depth of buffer monitoring
+static unsigned int frame_ctr; 
+static unsigned int frame_ctr_prev; 
 
 int output_add_lines(char* pc, int n)
 {
@@ -175,14 +177,21 @@ void* output_thread_lines(void* p)
  * ************************************************************************************** */
 void* output_thread_frames(void* p)
 {
+	int ret;
 	while(1==1)
 	{
 		sem_wait(&framebuff.sem);
-		send(raw_socket, framebuff.ptake, sizeof(struct can_frame), 0);
+		do
+		{
+			ret = send(raw_socket, framebuff.ptake, sizeof(struct can_frame), 0);
+if (ret == 0) frame_ctr += 1;			
+			usleep(10);
+
+		} while (ret == 0);
 
 		framebuff.ptake += 1;
 		if (framebuff.ptake >= framebuff.pend) framebuff.ptake = &framebuff.fbuf[0];
-		usleep(280);
+//		usleep(280);
 	}
 }
 
@@ -197,8 +206,9 @@ void* output_thread_buffmonitor(void* p)
 	while(1==1)
 	{
 		sleep(60);
-		printf("%3d CAN->TCP: %d  TCP->CAN %d\n",buffctr++,CANtoTCPmax,TCPtoCANmax);
+		printf("%3d CAN->TCP: %d  TCP->CAN %d frames_looped %d\n",buffctr++,CANtoTCPmax,TCPtoCANmax, frame_ctr - frame_ctr_prev);
 		buffmonitor_reset = 1;
+		frame_ctr_prev = frame_ctr;
 	}
 }
 /* **************************************************************************************
