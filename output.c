@@ -13,6 +13,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <errno.h>
 #include "output.h"
 
 extern int server_socket;
@@ -203,7 +204,7 @@ if (ret != sizeof(struct can_frame))
 {
 	if (idxret < 64)
 	{
-		frm_ret[idxret] = ret;
+		frm_ret[idxret] = errno;
 		idxret += 1;
 	}
 }
