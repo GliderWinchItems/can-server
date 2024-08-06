@@ -9,7 +9,7 @@
 #include <sys/socket.h>
 #include <semaphore.h>
 #include <sys/uio.h>
-#include <threads.h>
+//#include <threads.h>
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
