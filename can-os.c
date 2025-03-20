@@ -67,6 +67,8 @@ int can_os_cnvt(struct can_frame *pframe,struct CANALL *pall, char* p)
 	uint8_t *pb; // Binary array, working ptr 
 	uint8_t  w;  // hi-ord nibble
 	uint8_t  y;  // lo-ord nibble
+	uint32_t ww;
+	uint32_t yy;
 
 	int len = strlen(p);
 	if (len > 31) return -1; // Too long
@@ -129,13 +131,13 @@ int can_os_cnvt(struct can_frame *pframe,struct CANALL *pall, char* p)
 
 	/* Populate CAN socket frame with their inefficient format. */
 	// CAN id
-	w = ((pall->can.id & 0x4) << 29); // Extended frame bit
-	y = ((pall->can.id & 0x2) << 29); // RTR bit
-	if (w != 0){
-		pframe->can_id = (pall->can.id >> 3) | y | w;// 29b
+	ww = ((pall->can.id & 0x4) << 29); // Extended frame bit
+	yy = ((pall->can.id & 0x2) << 29); // RTR bit
+	if (ww != 0){
+		pframe->can_id = (pall->can.id >> 3) | yy | ww;// 29b
 	}
 	else{
-		pframe->can_id = (pall->can.id >> 21) | y;// 11b
+		pframe->can_id = (pall->can.id >> 21) | yy;// 11b
 	}
 
 	// Payload (copy all possibilites in one gulp)
