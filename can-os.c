@@ -129,8 +129,8 @@ int can_os_cnvt(struct can_frame *pframe,struct CANALL *pall, char* p)
 
 	/* Populate CAN socket frame with their inefficient format. */
 	// CAN id
-	w = ((pall->can.id & 0x4) << 28); // Extended frame bit
-	y = ((pall->can.id & 0x2) << 28); // RTR bit
+	w = ((pall->can.id & 0x4) << 29); // Extended frame bit
+	y = ((pall->can.id & 0x2) << 29); // RTR bit
 	if (w != 0){
 		pframe->can_id = (pall->can.id >> 3) | y | w;// 29b
 	}
